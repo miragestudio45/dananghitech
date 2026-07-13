@@ -146,3 +146,5 @@ Bản này là prototype sản phẩm có luồng nghiệp vụ và dữ liệu 
 - `CHANGES_HIGH_TECH_PARK.md`: lịch sử chuyển đổi sản phẩm.
 - `REQUIREMENTS_TRACEABILITY.md`: ma trận bám sát yêu cầu nghiệp vụ.
 - `VERIFICATION.md`: kết quả build và kiểm tra route.
+
+Đây là dự án cho Đà Nẵng
