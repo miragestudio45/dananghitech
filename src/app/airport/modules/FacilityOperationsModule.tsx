@@ -187,31 +187,20 @@ function EnergyPowerOperations() {
   </>;
 }
 
-const CCTV_POSTER_OVERRIDES: Record<string, string> = {
-  "27778672": "https://images.pexels.com/videos/27778672/airport-terminal-barrier-passengers-queue-27778672.jpeg?auto=compress&cs=tinysrgb&w=640",
-  "34969100": "https://images.pexels.com/videos/34969100/airport-4k-34969100.jpeg?auto=compress&cs=tinysrgb&w=640",
-  "28894404": "https://images.pexels.com/videos/28894404/airport-flight-journey-melbourne-melbourne-airport-28894404.jpeg?auto=compress&cs=tinysrgb&w=640",
-  "29305388": "https://images.pexels.com/videos/29305388/adventure-africa-aircraft-airplane-29305388.jpeg?auto=compress&cs=tinysrgb&w=640",
-  "28894958": "https://images.pexels.com/videos/28894958/airport-bangkok-bangkok-airport-food-28894958.jpeg?auto=compress&cs=tinysrgb&w=640",
-};
-
 const CCTV_STOCK_MEDIA = [
-  { sourceId: "37130592", label: "Security patrol", mediaUrl: "https://videos.pexels.com/video-files/37130592/15730105_3840_2160_24fps.mp4" },
-  { sourceId: "32654547", label: "Security checkpoint", mediaUrl: "https://videos.pexels.com/video-files/32654547/13922797_3840_2160_24fps.mp4" },
-  { sourceId: "27778672", label: "Checkpoint queue", mediaUrl: "https://videos.pexels.com/video-files/27778672/12222638_3840_2160_25fps.mp4" },
-  { sourceId: "13244546", label: "R&D public corridor", mediaUrl: "https://videos.pexels.com/video-files/13244546/13244546-hd_1920_1080_24fps.mp4" },
-  { sourceId: "20606517", label: "Employee and visitor flow", mediaUrl: "https://videos.pexels.com/video-files/20606517/20606517-hd_1920_1080_24fps.mp4" },
-  { sourceId: "37130583", label: "Innovation center overview", mediaUrl: "https://videos.pexels.com/video-files/37130583/15730126_3840_2160_24fps.mp4" },
-  { sourceId: "33182811", label: "Visitor reception", mediaUrl: "https://videos.pexels.com/video-files/33182811/14141601_2160_3840_30fps.mp4" },
-  { sourceId: "34969100", label: "Administration lobby", mediaUrl: "https://videos.pexels.com/video-files/34969100/14813122_2160_3840_30fps.mp4" },
-  { sourceId: "28894404", label: "Internal mobility corridor", mediaUrl: "https://videos.pexels.com/video-files/28894404/12507308_3840_2160_60fps.mp4" },
-  { sourceId: "29305388", label: "Advanced manufacturing lobby", mediaUrl: "https://videos.pexels.com/video-files/29305388/12637285_3840_2160_24fps.mp4" },
-  { sourceId: "37130608", label: "Logistics receiving area", mediaUrl: "https://videos.pexels.com/video-files/37130608/15730181_3840_2160_24fps.mp4" },
-  { sourceId: "28894958", label: "Warehouse and inspection area", mediaUrl: "https://videos.pexels.com/video-files/28894958/12507465_3840_2160_60fps.mp4" },
-].map((item) => ({
-  ...item,
-  posterUrl: CCTV_POSTER_OVERRIDES[item.sourceId] ?? `https://images.pexels.com/videos/${item.sourceId}/pexels-photo-${item.sourceId}.jpeg?auto=compress&cs=tinysrgb&w=640`,
-}));
+  { sourceId: "30984704", label: "Solar industrial park overview", zone: "Green Technology Precinct", mediaUrl: "https://videos.pexels.com/video-files/30984701/13246840_640_360_60fps.mp4", posterUrl: "https://images.pexels.com/videos/30984704/industrial-area-30984704.jpeg?auto=compress&cs=tinysrgb&w=640" },
+  { sourceId: "9573753", label: "Cleanroom process monitoring", zone: "R&D Cleanroom", mediaUrl: "https://videos.pexels.com/video-files/9573900/9573900-sd_960_506_25fps.mp4", posterUrl: "https://images.pexels.com/videos/9573753/pexels-photo-9573753.jpeg?auto=compress&cs=tinysrgb&w=640" },
+  { sourceId: "15170997", label: "Warehouse safety overview", zone: "Logistics Hub", mediaUrl: "https://videos.pexels.com/video-files/16971219/16971219-sd_360_640_30fps.mp4", posterUrl: "https://images.pexels.com/videos/15170997/action-camera-assemble-assembling-assembly-15170997.jpeg?auto=compress&cs=tinysrgb&w=640" },
+  { sourceId: "10472376", label: "Automated parcel sorting", zone: "Distribution Center", mediaUrl: "https://videos.pexels.com/video-files/10472349/10472349-sd_640_360_25fps.mp4", posterUrl: "https://images.pexels.com/videos/10472376/pexels-photo-10472376.jpeg?auto=compress&cs=tinysrgb&w=640" },
+  { sourceId: "32243654", label: "Forklift receiving lane", zone: "Material Receiving", mediaUrl: "https://videos.pexels.com/video-files/32243651/13751461_640_360_25fps.mp4", posterUrl: "https://images.pexels.com/videos/32243654/pexels-photo-32243654.jpeg?auto=compress&cs=tinysrgb&w=640" },
+  { sourceId: "32268484", label: "Advanced manufacturing hall", zone: "Manufacturing Precinct", mediaUrl: "https://videos.pexels.com/video-files/32268483/13762749_640_360_60fps.mp4", posterUrl: "https://images.pexels.com/videos/32268484/pexels-photo-32268484.jpeg?auto=compress&cs=tinysrgb&w=640" },
+  { sourceId: "34799017", label: "Green industry perimeter", zone: "Solar Manufacturing Campus", mediaUrl: "https://videos.pexels.com/video-files/34788653/14749917_640_360_60fps.mp4", posterUrl: "https://images.pexels.com/videos/34799017/pexels-photo-34799017.jpeg?auto=compress&cs=tinysrgb&w=640" },
+  { sourceId: "8381457", label: "Biosafety laboratory", zone: "Research Laboratory", mediaUrl: "https://videos.pexels.com/video-files/8381449/8381449-sd_640_360_25fps.mp4", posterUrl: "https://images.pexels.com/videos/8381457/pexels-photo-8381457.jpeg?auto=compress&cs=tinysrgb&w=640" },
+  { sourceId: "4292581", label: "Warehouse aisle monitoring", zone: "Central Warehouse", mediaUrl: "https://videos.pexels.com/video-files/4291724/4291724-sd_640_360_25fps.mp4", posterUrl: "https://images.pexels.com/videos/4292581/pexels-photo-4292581.jpeg?auto=compress&cs=tinysrgb&w=640" },
+  { sourceId: "9574128", label: "Precision laboratory workflow", zone: "Innovation Center", mediaUrl: "https://videos.pexels.com/video-files/9573911/9573911-sd_960_506_25fps.mp4", posterUrl: "https://images.pexels.com/videos/9574128/pexels-photo-9574128.jpeg?auto=compress&cs=tinysrgb&w=640" },
+  { sourceId: "4291727", label: "Logistics supervision", zone: "Warehouse Control Zone", mediaUrl: "https://videos.pexels.com/video-files/4291726/4291726-sd_640_360_25fps.mp4", posterUrl: "https://images.pexels.com/videos/4291727/pexels-photo-4291727.jpeg?auto=compress&cs=tinysrgb&w=640" },
+  { sourceId: "30781300", label: "Industrial campus aerial", zone: "High-Tech Manufacturing Zone", mediaUrl: "https://videos.pexels.com/video-files/30781291/13166473_640_360_60fps.mp4", posterUrl: "https://images.pexels.com/videos/30781300/industrial-area-sonadezi-chau-d-c-30781300.jpeg?auto=compress&cs=tinysrgb&w=640" },
+];
 
 function CctvStockVideo({ src, playing, className = "" }: { src: string; playing: boolean; className?: string }) {
   const videoRef = useRef<HTMLVideoElement>(null);

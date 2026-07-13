@@ -47,6 +47,22 @@ const HOVER_INTENSITY  = 0.6;
 const SELECT_INTENSITY = 0.4;
 const AUTO_ROTATE_SPEED = 0.5;
 
+function disposeModel(root: THREE.Object3D) {
+  root.traverse((child) => {
+    if (!(child as THREE.Mesh).isMesh) return;
+    const mesh = child as THREE.Mesh;
+    mesh.geometry?.dispose();
+    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    materials.forEach((material) => {
+      const disposable = material as THREE.Material & Record<string, unknown>;
+      Object.values(disposable).forEach((value) => {
+        if (value instanceof THREE.Texture) value.dispose();
+      });
+      material.dispose();
+    });
+  });
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export const BMS3DModelViewer: React.FC<BMS3DModelViewerProps> = ({
@@ -67,6 +83,7 @@ export const BMS3DModelViewer: React.FC<BMS3DModelViewerProps> = ({
   const clockRef  = useRef(new THREE.Timer());
   const rafRef    = useRef(0);
   const modelRef  = useRef<THREE.Object3D | null>(null);
+  const loadRequestRef = useRef(0);
 
   const hoveredRef  = useRef<THREE.Mesh | null>(null);
   const selectedRef = useRef<THREE.Mesh | null>(null);
@@ -203,14 +220,20 @@ export const BMS3DModelViewer: React.FC<BMS3DModelViewerProps> = ({
   // ── Load model ──────────────────────────────────────────────────────────────
   const loadModel = useCallback(async (url: string) => {
     if (!sceneRef.current) return;
+    const requestId = ++loadRequestRef.current;
     setLoadState("loading");
     setProgress(0);
     setErrorMsg("");
 
     const loader = await createBmsGltfLoader();
+    if (requestId !== loadRequestRef.current) return;
     loader.load(
       url,
       (gltf) => {
+        if (requestId !== loadRequestRef.current || !sceneRef.current) {
+          disposeModel(gltf.scene);
+          return;
+        }
         const scene = sceneRef.current!;
         const model = gltf.scene;
 
@@ -300,6 +323,7 @@ export const BMS3DModelViewer: React.FC<BMS3DModelViewerProps> = ({
       },
       (xhr) => { if (xhr.total > 0) setProgress(Math.round((xhr.loaded / xhr.total) * 100)); },
       (err) => {
+        if (requestId !== loadRequestRef.current) return;
         console.error("[BMS Viewer] load error:", url, err);
         setLoadState("error");
         setErrorMsg(String(err instanceof Error ? err.message : err));
@@ -423,9 +447,15 @@ export const BMS3DModelViewer: React.FC<BMS3DModelViewerProps> = ({
     el?.addEventListener("mousemove", handleMouseMove);
     el?.addEventListener("click",     handleClick);
     return () => {
+      loadRequestRef.current += 1;
       cancelAnimationFrame(rafRef.current);
       el?.removeEventListener("mousemove", handleMouseMove);
       el?.removeEventListener("click",     handleClick);
+      if (modelRef.current) {
+        sceneRef.current?.remove(modelRef.current);
+        disposeModel(modelRef.current);
+        modelRef.current = null;
+      }
       if (rendRef.current && el) try { el.removeChild(rendRef.current.domElement); } catch (_) {}
       rendRef.current?.dispose();
       cleanup?.();
@@ -435,7 +465,11 @@ export const BMS3DModelViewer: React.FC<BMS3DModelViewerProps> = ({
   // ── Reload when URL changes ─────────────────────────────────────────────────
   useEffect(() => {
     if (!sceneRef.current) return;
-    if (modelRef.current) { sceneRef.current.remove(modelRef.current); modelRef.current = null; }
+    if (modelRef.current) {
+      sceneRef.current.remove(modelRef.current);
+      disposeModel(modelRef.current);
+      modelRef.current = null;
+    }
     hoveredRef.current = selectedRef.current = null;
     origEmissive.current.clear();
     mixerRef.current = null;

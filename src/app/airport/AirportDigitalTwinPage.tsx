@@ -29,6 +29,7 @@ function AirportDigitalTwinPageContent() {
   const [viewMode, setViewMode] = useState<"2d" | "3d">("2d");
   const [spatialContext, setSpatialContext] = useState("All zones");
   const [overviewRequest, setOverviewRequest] = useState(0);
+  const [mapFullscreen, setMapFullscreen] = useState(false);
   const sourceModule = useMemo(() => getAirportModule(activeModule), [activeModule]);
   const module = useMemo(() => localizeModule(sourceModule), [sourceModule, localizeModule]);
   const activeSection = sections[activeModule] ?? sourceModule.defaultSection;
@@ -37,6 +38,12 @@ function AirportDigitalTwinPageContent() {
   useEffect(() => {
     document.title = "Da Nang High-Tech Park Digital Twin Platform";
   }, [language]);
+
+  useEffect(() => {
+    const onFullscreenChange = (event: Event) => setMapFullscreen(Boolean((event as CustomEvent<boolean>).detail));
+    window.addEventListener("airport-fullscreen-map-change", onFullscreenChange);
+    return () => window.removeEventListener("airport-fullscreen-map-change", onFullscreenChange);
+  }, []);
 
   const changeModule = (moduleId: AirportModuleId) => {
     setActiveModule(moduleId);
@@ -94,6 +101,8 @@ function AirportDigitalTwinPageContent() {
           ? "h-full min-w-0 flex-1 overflow-hidden"
           : activeModule === "BMS"
             ? `h-full min-w-0 flex-1 overflow-hidden px-3 pt-2 ${activeSection === "bms-hvac" ? "pb-[72px]" : ""}`
+            : activeModule === "SPATIAL" && activeSection === "spatial-command"
+              ? "h-full min-w-0 flex-1 overflow-hidden px-4 pb-[72px] pt-4"
             : activeModule === "ASSETS_FM" && activeSection === "bim-explorer"
               ? "h-full min-w-0 flex-1 overflow-hidden px-4 pb-[72px] pt-4"
             : "airport-scrollbar h-full min-w-0 flex-1 overflow-y-auto px-4 pb-24 pt-4"
@@ -114,7 +123,7 @@ function AirportDigitalTwinPageContent() {
         </main>
       </div>
 
-      <AirportBottomNavigation activeModule={activeModule} onModuleChange={changeModule} onLauncher={() => setLauncherOpen(true)} />
+      {!mapFullscreen && <AirportBottomNavigation activeModule={activeModule} onModuleChange={changeModule} onLauncher={() => setLauncherOpen(true)} />}
       <AirportAppLauncher open={launcherOpen} onClose={() => setLauncherOpen(false)} onSelect={launcherSelect} />
     </div>
   );

@@ -1,13 +1,15 @@
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Activity, Boxes, Building2, Camera, CheckCircle2, ChevronRight, ClipboardCheck,
   CloudCog, Database, FileBox, FileClock, FileSearch, Layers3, Map, MapPin,
-  Mountain, Network, RadioTower, Route, Satellite, ScanLine, Search, ShieldCheck,
+  Maximize2, Minimize2, Mountain, Network, PanelRightOpen, RadioTower, Route, Satellite, ScanLine, Search, ShieldCheck, X,
   Sparkles, TimerReset, UploadCloud, Waves, Workflow, Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AirportMetricCard, AirportPanel, AirportStatusBadge } from "../shared/AirportUI";
+import { SpatialOperatingMap } from "./SpatialOperatingMap";
+import { PlanningOperationsMap } from "./PlanningOperationsMap";
 
 const spatialMetrics = [
   ["Managed area", "1,128 ha", "BIM-GIS extent", "cyan"],
@@ -57,53 +59,48 @@ export function SpatialDataModule({ sectionId }: { sectionId: string }) {
 }
 
 function MetricStrip() {
-  return <div className="grid grid-cols-3 gap-2 xl:grid-cols-6">{spatialMetrics.map(([label, value, trend, tone]) => <AirportMetricCard key={label} label={label} value={value} trend={trend} tone={tone} compact />)}</div>;
+  const tones = { cyan: "border-cyan-400/18 bg-cyan-400/[.055]", emerald: "border-emerald-400/18 bg-emerald-400/[.055]", blue: "border-blue-400/18 bg-blue-400/[.055]", violet: "border-violet-400/18 bg-violet-400/[.055]" };
+  return <div className="grid grid-cols-3 gap-1.5 xl:grid-cols-6">{spatialMetrics.map(([label, value, trend, tone]) => <div key={label} className={`rounded-lg border px-2.5 py-2 ${tones[tone]}`}><p className="truncate text-[7px] font-semibold uppercase tracking-[.12em] text-slate-500">{label}</p><div className="mt-1 flex items-end justify-between gap-1.5"><strong className="whitespace-nowrap text-sm leading-none text-white">{value}</strong><span className="truncate text-right text-[7px] text-cyan-200/80">{trend}</span></div></div>)}</div>;
 }
 
 function SpatialCommandCenter() {
   const [activeLayer, setActiveLayer] = useState("Orthophoto");
   const [selectedSite, setSelectedSite] = useState("110 kV Hoa Lien Substation");
-  const sites = [
-    ["Administration & IOC", "BIM + asset + live systems", "normal"],
-    ["110 kV Hoa Lien Substation", "Point cloud + power quality + work orders", "warning"],
-    ["Wastewater Treatment Plant", "BIM + process + environmental compliance", "normal"],
-    ["Hoa Trung Water Plant", "Survey + hydraulic network + asset lifecycle", "normal"],
-    ["Tenant factory portfolio", "Planning + construction + utility readiness", "optimized"],
-  ] as const;
-
-  return <>
-    <MetricStrip />
-    <div className="grid gap-4 xl:grid-cols-[1.45fr_.55fr]">
-      <AirportPanel title="BIM-GIS spatial operating picture" subtitle="Survey foundation → planning → infrastructure → asset → live operations">
-        <div className="relative min-h-[460px] overflow-hidden p-4">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_54%_42%,rgba(34,211,238,.14),transparent_42%),linear-gradient(135deg,#06121f,#071a2b_45%,#04101c)]" />
-          <div className="absolute inset-0 opacity-25" style={{ backgroundImage: "linear-gradient(rgba(103,232,249,.16) 1px,transparent 1px),linear-gradient(90deg,rgba(103,232,249,.16) 1px,transparent 1px)", backgroundSize: "34px 34px" }} />
-          <svg className="absolute inset-0 h-full w-full opacity-80" viewBox="0 0 1000 540" preserveAspectRatio="none">
-            <path d="M40 420 C180 330, 280 370, 410 270 S660 160, 930 110" fill="none" stroke="rgba(96,165,250,.7)" strokeWidth="8" />
-            <path d="M90 470 C220 410, 360 460, 500 350 S760 300, 940 250" fill="none" stroke="rgba(34,211,238,.36)" strokeWidth="4" strokeDasharray="12 9" />
-            <path d="M110 100 C250 160, 320 120, 470 190 S720 220, 910 170" fill="none" stroke="rgba(52,211,153,.45)" strokeWidth="3" />
-            <circle cx="220" cy="330" r="84" fill="rgba(34,211,238,.05)" stroke="rgba(34,211,238,.36)" />
-            <circle cx="640" cy="210" r="104" fill="rgba(139,92,246,.05)" stroke="rgba(139,92,246,.32)" />
-          </svg>
-          <div className="relative grid h-full grid-cols-[180px_1fr] gap-4">
-            <div className="rounded-xl border border-white/10 bg-[#06111f]/88 p-3 backdrop-blur-xl">
+  const [isMapExpanded, setIsMapExpanded] = useState(false);
+  const [contextOpen, setContextOpen] = useState(false);
+  const selectSite = useCallback((name: string) => { setSelectedSite(name); setContextOpen(true); }, []);
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent("airport-fullscreen-map-change", { detail: isMapExpanded }));
+    if (!isMapExpanded) return;
+    const close = (event: KeyboardEvent) => { if (event.key === "Escape") setIsMapExpanded(false); };
+    window.addEventListener("keydown", close);
+    return () => window.removeEventListener("keydown", close);
+  }, [isMapExpanded]);
+  useEffect(() => () => { window.dispatchEvent(new CustomEvent("airport-fullscreen-map-change", { detail: false })); }, []);
+  return <div className="flex h-full min-h-0 flex-col gap-3">
+    <div className="flex-none"><MetricStrip /></div>
+    <div className="grid min-h-0 flex-1 gap-3 xl:grid-cols-[minmax(0,1fr)_280px]">
+      <AirportPanel title="BIM-GIS spatial operating picture" subtitle="Kéo để di chuyển · cuộn để zoom · chọn marker để xem ngữ cảnh" action={<button onClick={() => setIsMapExpanded((value) => !value)} className="airport-icon-button" title={isMapExpanded ? "Đóng chế độ mở rộng" : "Mở rộng bản đồ"}>{isMapExpanded ? <X size={15} /> : <Maximize2 size={14} />}</button>} className={`flex flex-col overflow-hidden ${isMapExpanded ? "fixed bottom-4 left-4 right-4 top-[76px] z-[96] min-h-0 bg-[#071426]" : "min-h-[520px] xl:min-h-0"}`}>
+        <div className="relative min-h-[470px] flex-1 overflow-hidden p-3 xl:min-h-0">
+          <SpatialOperatingMap selectedSite={selectedSite} onSelectSite={selectSite} activeLayer={activeLayer} />
+          <div className="pointer-events-none absolute inset-3 z-10 grid grid-cols-[180px_1fr] gap-4">
+            <div className="pointer-events-auto flex min-h-0 flex-col overflow-hidden rounded-xl border border-white/10 bg-[#06111f]/90 p-3 shadow-2xl backdrop-blur-xl">
               <p className="text-[9px] font-bold uppercase tracking-[.17em] text-cyan-300">Spatial layers</p>
-              <div className="mt-3 space-y-3">{layerGroups.map((group) => <div key={group.title}><p className="text-[8px] uppercase tracking-[.12em] text-slate-600">{group.title}</p><div className="mt-1 space-y-1">{group.items.map((item) => <button key={item} onClick={() => setActiveLayer(item)} className={`flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-[9px] ${activeLayer === item ? "bg-cyan-400/12 text-cyan-200" : "text-slate-400 hover:bg-white/5"}`}><span>{item}</span><span className={`h-1.5 w-1.5 rounded-full ${activeLayer === item ? "bg-cyan-300" : "bg-slate-700"}`} /></button>)}</div></div>)}</div>
+              <div className="spatial-layer-scrollbar mt-3 min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">{layerGroups.map((group) => <div key={group.title}><p className="text-[8px] uppercase tracking-[.12em] text-slate-600">{group.title}</p><div className="mt-1 space-y-1">{group.items.map((item) => <button key={item} onClick={() => setActiveLayer(item)} className={`flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-[9px] transition ${activeLayer === item ? "bg-cyan-400/12 text-cyan-200" : "text-slate-400 hover:bg-white/5"}`}><span>{item}</span><span className={`h-1.5 w-1.5 rounded-full ${activeLayer === item ? "bg-cyan-300" : "bg-slate-700"}`} /></button>)}</div></div>)}</div>
             </div>
             <div className="relative">
-              <div className="absolute right-2 top-2 rounded-lg border border-cyan-400/20 bg-[#06111f]/85 px-3 py-2 backdrop-blur"><p className="text-[8px] uppercase tracking-[.15em] text-cyan-300">Active layer</p><p className="mt-1 text-xs font-semibold text-white">{activeLayer}</p></div>
-              {[[22,62,"Administration & IOC"],[39,39,"110 kV Hoa Lien Substation"],[65,67,"Wastewater Treatment Plant"],[76,35,"Hoa Trung Water Plant"],[54,51,"Tenant factory portfolio"]].map(([x,y,label], index) => <button key={String(label)} onClick={() => setSelectedSite(String(label))} style={{ left: `${x}%`, top: `${y}%` }} className="absolute -translate-x-1/2 -translate-y-1/2 group"><span className={`block h-4 w-4 rounded-full border-2 border-[#05101d] shadow-[0_0_18px_currentColor] ${selectedSite === label ? "bg-cyan-200 text-cyan-300" : index === 1 ? "bg-amber-300 text-amber-300" : "bg-emerald-300 text-emerald-300"}`} /><span className="pointer-events-none absolute left-5 top-1/2 hidden -translate-y-1/2 whitespace-nowrap rounded border border-white/10 bg-[#071426]/95 px-2 py-1 text-[9px] text-white shadow-xl group-hover:block">{label}</span></button>)}
-              <div className="absolute bottom-3 left-3 right-3 rounded-xl border border-white/10 bg-[#06111f]/88 p-4 backdrop-blur-xl"><div className="flex items-center justify-between"><div><p className="text-[9px] uppercase tracking-[.14em] text-cyan-300">Selected spatial context</p><h3 className="mt-1 text-sm font-semibold text-white">{selectedSite}</h3></div><AirportStatusBadge status={selectedSite.includes("Substation") ? "warning" : "normal"} /></div><div className="mt-3 grid grid-cols-4 gap-2">{[["GIS features","184"],["BIM objects","2,842"],["Linked assets","1,286"],["Open issues","4"]].map(([a,b]) => <div key={a} className="rounded-lg bg-white/[.035] p-2"><p className="text-[8px] text-slate-500">{a}</p><p className="mt-1 text-sm font-semibold text-white">{b}</p></div>)}</div></div>
+              <div className="pointer-events-auto absolute right-11 top-0 rounded-lg border border-cyan-400/20 bg-[#06111f]/88 px-3 py-2 shadow-xl backdrop-blur"><p className="text-[8px] uppercase tracking-[.15em] text-cyan-300">Active layer</p><p className="mt-1 text-xs font-semibold text-white">{activeLayer}</p></div>
+              {contextOpen ? <div className="pointer-events-auto absolute bottom-0 right-0 w-72 rounded-xl border border-cyan-400/20 bg-[#06111f]/94 p-3 shadow-2xl backdrop-blur-xl"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="text-[8px] uppercase tracking-[.14em] text-cyan-300">Selected spatial context</p><h3 className="mt-1 text-xs font-semibold leading-snug text-white">{selectedSite}</h3></div><button onClick={() => setContextOpen(false)} className="airport-icon-button h-7 w-7 flex-none" title="Đóng chi tiết"><Minimize2 size={12} /></button></div><div className="mt-3 grid grid-cols-2 gap-1.5">{[["GIS features","184"],["BIM objects","2,842"],["Linked assets","1,286"],["Open issues","4"]].map(([a,b]) => <div key={a} className="rounded-lg bg-white/[.035] px-2 py-1.5"><p className="text-[7px] text-slate-500">{a}</p><p className="mt-0.5 text-[11px] font-semibold text-white">{b}</p></div>)}</div></div> : <button onClick={() => setContextOpen(true)} className="airport-button pointer-events-auto absolute bottom-0 right-0 bg-[#06111f]/90 shadow-xl"><PanelRightOpen size={13} /> Chi tiết vị trí</button>}
             </div>
           </div>
         </div>
       </AirportPanel>
-      <div className="space-y-4">
-        <AirportPanel title="Digital spatial foundation"><div className="space-y-2 p-3">{["Reality capture and survey control","Terrain and hydrology model","Planning and parcel cadastre","BIM federation and common IDs","Operational assets and IoT linkage"].map((item, index) => <div key={item} className="flex items-center gap-3 rounded-lg border border-white/[.06] bg-white/[.025] p-3"><span className="grid h-7 w-7 place-items-center rounded-full bg-cyan-400/10 text-[10px] font-bold text-cyan-300">{index + 1}</span><div className="flex-1"><p className="text-[10px] text-slate-300">{item}</p><p className="mt-1 text-[8px] text-slate-600">{index < 3 ? "Survey / planning foundation" : "Digital thread / operations"}</p></div><CheckCircle2 size={14} className="text-emerald-300" /></div>)}</div></AirportPanel>
-        <AirportPanel title="Decision use cases"><div className="grid gap-2 p-3">{["Land and investment decisions","Utility capacity and connection readiness","Construction progress and compliance","Flood and environmental simulation","Asset lifecycle and predictive maintenance"].map((item) => <button key={item} onClick={() => toast.info(item)} className="flex items-center justify-between rounded-lg border border-cyan-400/10 bg-cyan-400/[.035] px-3 py-2.5 text-left text-[10px] text-slate-300 hover:border-cyan-400/25"><span>{item}</span><ChevronRight size={13} className="text-cyan-300" /></button>)}</div></AirportPanel>
+      <div className="grid min-h-0 grid-rows-[minmax(0,.85fr)_minmax(0,1fr)] gap-3">
+        <AirportPanel title="Digital spatial foundation detail" className="flex min-h-0 flex-col overflow-hidden"><div className="airport-scrollbar min-h-0 flex-1 space-y-1.5 overflow-y-auto p-2.5">{["Reality capture and survey control","Terrain and hydrology model","Planning and parcel cadastre","BIM federation and common IDs","Operational assets and IoT linkage"].map((item, index) => <div key={item} className="flex items-center gap-2 rounded-lg border border-white/[.06] bg-white/[.025] px-2.5 py-2"><span className="grid h-6 w-6 flex-none place-items-center rounded-full bg-cyan-400/10 text-[9px] font-bold text-cyan-300">{index + 1}</span><p className="min-w-0 flex-1 text-[9px] leading-snug text-slate-300">{item}</p><CheckCircle2 size={12} className="flex-none text-emerald-300" /></div>)}</div></AirportPanel>
+        <AirportPanel title="Decision use cases" className="flex min-h-0 flex-col overflow-hidden"><div className="airport-scrollbar grid min-h-0 flex-1 content-start gap-1.5 overflow-y-auto p-2.5">{["Land and investment decisions","Utility capacity and connection readiness","Construction progress and compliance","Flood and environmental simulation","Asset lifecycle and predictive maintenance"].map((item) => <button key={item} onClick={() => toast.info(item)} className="flex items-center justify-between gap-2 rounded-lg border border-cyan-400/10 bg-cyan-400/[.035] px-2.5 py-2 text-left text-[9px] leading-snug text-slate-300 hover:border-cyan-400/25"><span>{item}</span><ChevronRight size={12} className="flex-none text-cyan-300" /></button>)}</div></AirportPanel>
       </div>
     </div>
-  </>;
+  </div>;
 }
 
 function RealityCapture() {
@@ -148,18 +145,22 @@ function TerrainElevation() {
 export function PlanningParcelMap() {
   const [selected, setSelected] = useState(parcels[0]);
   const [filter, setFilter] = useState("All");
-  const filtered = filter === "All" ? parcels : parcels.filter((parcel) => parcel.state === filter);
+  const [isPlanningExpanded, setIsPlanningExpanded] = useState(false);
+  const filtered = useMemo(() => filter === "All" ? parcels : parcels.filter((parcel) => parcel.state === filter), [filter]);
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent("airport-fullscreen-map-change", { detail: isPlanningExpanded }));
+    if (!isPlanningExpanded) return;
+    const close = (event: KeyboardEvent) => { if (event.key === "Escape") setIsPlanningExpanded(false); };
+    window.addEventListener("keydown", close);
+    return () => window.removeEventListener("keydown", close);
+  }, [isPlanningExpanded]);
+  useEffect(() => () => { window.dispatchEvent(new CustomEvent("airport-fullscreen-map-change", { detail: false })); }, []);
   return <>
-    <div className="grid grid-cols-3 gap-2 xl:grid-cols-6">{[["Total plots","186","managed","cyan"],["Occupied area","78%","park-wide","blue"],["Available land","146.8 ha","investment","emerald"],["Negotiation","12 plots","qualified","violet"],["Construction","18 projects","active","amber"],["Utility ready","91.6%","weighted","cyan"]].map(([a,b,c,d]) => <AirportMetricCard key={a} label={a} value={b} trend={c} tone={d as any} compact />)}</div>
+    <div className="grid grid-cols-3 gap-1.5 xl:grid-cols-6">{[["Total plots","186","managed"],["Occupied area","78%","park-wide"],["Available land","146.8 ha","investment"],["Negotiation","12 plots","qualified"],["Construction","18 projects","active"],["Utility ready","91.6%","weighted"]].map(([a,b,c]) => <div key={a} className="rounded-lg border border-cyan-400/15 bg-cyan-400/[.045] px-2.5 py-2"><p className="truncate text-[7px] font-semibold uppercase tracking-[.12em] text-slate-500">{a}</p><div className="mt-1 flex items-end justify-between gap-1"><strong className="whitespace-nowrap text-sm leading-none text-white">{b}</strong><span className="truncate text-[7px] text-cyan-200/75">{c}</span></div></div>)}</div>
     <div className="flex flex-wrap items-center gap-2 rounded-xl border border-white/[.07] bg-[#071426]/80 p-2"><Search size={14} className="ml-2 text-slate-500"/><input className="min-w-52 flex-1 bg-transparent text-xs text-white outline-none placeholder:text-slate-600" placeholder="Search plot, investor or project…"/>{["All","Available","Negotiation","Under construction","Operating"].map((item)=><button key={item} onClick={()=>setFilter(item)} className={`rounded-lg px-3 py-2 text-[9px] font-semibold ${filter===item?"bg-cyan-300 text-slate-950":"bg-white/[.035] text-slate-400"}`}>{item}</button>)}</div>
     <div className="grid gap-4 xl:grid-cols-[1.4fr_.6fr]">
-      <AirportPanel title="Planning and parcel operations map" subtitle="Plot boundaries, land-use zoning, investment status and utility readiness">
-        <div className="relative min-h-[520px] overflow-hidden rounded-b-xl bg-[#051523]">
-          <div className="absolute inset-0 opacity-25" style={{backgroundImage:"linear-gradient(rgba(34,211,238,.14) 1px,transparent 1px),linear-gradient(90deg,rgba(34,211,238,.14) 1px,transparent 1px)",backgroundSize:"40px 40px"}}/>
-          <svg className="absolute inset-0 h-full w-full opacity-70" viewBox="0 0 1000 520" preserveAspectRatio="none"><path d="M0 430 C180 355 300 410 460 300 S720 200 1000 145" fill="none" stroke="rgba(96,165,250,.55)" strokeWidth="18"/><path d="M20 90 L980 460" stroke="rgba(52,211,153,.28)" strokeWidth="5" strokeDasharray="13 8"/></svg>
-          {filtered.map((parcel) => <button key={parcel.id} onClick={()=>setSelected(parcel)} style={{left:`${parcel.left}%`,top:`${parcel.top}%`,width:`${parcel.width}%`,height:`${parcel.height}%`}} className={`absolute rounded-xl border-2 p-2 text-left transition-all ${selected.id===parcel.id?"z-10 border-cyan-200 bg-cyan-300/18 shadow-[0_0_30px_rgba(34,211,238,.28)]":"border-cyan-400/20 bg-cyan-400/[.06] hover:border-cyan-300/45"}`}><p className="text-[8px] font-bold uppercase tracking-[.1em] text-cyan-200">{parcel.id}</p><p className="mt-1 line-clamp-2 text-[9px] font-semibold text-white">{parcel.name}</p><span className={`mt-2 inline-block rounded-full px-2 py-1 text-[8px] ${parcel.state==="Available"?"bg-emerald-400/15 text-emerald-200":parcel.state==="Under construction"?"bg-amber-400/15 text-amber-200":"bg-blue-400/15 text-blue-200"}`}>{parcel.state}</span></button>)}
-          <div className="absolute bottom-4 left-4 rounded-xl border border-white/10 bg-[#06111f]/82 p-3 backdrop-blur-xl"><p className="text-[8px] uppercase tracking-[.14em] text-slate-500">Coordinate reference</p><p className="mt-1 text-[10px] font-semibold text-white">VN-2000 · Hòn Dấu elevation</p></div>
-        </div>
+      <AirportPanel title="Planning and parcel operations map" subtitle="Bản đồ GIS thật · ranh giới lô đất · trạng thái đầu tư · công trình 3D" action={<button onClick={() => setIsPlanningExpanded((value) => !value)} className="airport-icon-button" title={isPlanningExpanded ? "Đóng chế độ mở rộng" : "Mở rộng bản đồ"}>{isPlanningExpanded ? <X size={15}/> : <Maximize2 size={14}/>}</button>} className={`flex flex-col overflow-hidden ${isPlanningExpanded ? "fixed bottom-4 left-4 right-4 top-[76px] z-[96] bg-[#071426]" : ""}`}>
+        <div className="relative min-h-[580px] flex-1 overflow-hidden rounded-b-xl bg-[#051523]"><PlanningOperationsMap parcels={filtered} selectedId={selected.id} onSelect={(id) => { const parcel = parcels.find((item) => item.id === id); if (parcel) setSelected(parcel); }} /></div>
       </AirportPanel>
       <AirportPanel title={selected.name} subtitle={`${selected.id} · ${selected.zone}`}>
         <div className="space-y-4 p-4">

@@ -13,7 +13,7 @@ export const AIRPORT_3D_CONFIG = {
     far: 10000,
   },
   lighting: {
-    exposure: 1.18,
+    exposure: 0.82,
     environmentIntensity: 0.85,
     keyIntensity: 3.2,
     fillIntensity: 1.65,

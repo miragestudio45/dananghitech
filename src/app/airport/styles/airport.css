@@ -71,6 +71,48 @@
 .airport-scrollbar::-webkit-scrollbar-thumb { border-radius: 999px; background: #164e63; }
 .airport-scrollbar::-webkit-scrollbar-track { background: transparent; }
 
+.spatial-layer-scrollbar { scrollbar-width: thin; scrollbar-color: rgba(34,211,238,.42) transparent; }
+.spatial-layer-scrollbar::-webkit-scrollbar { width: 3px; }
+.spatial-layer-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.spatial-layer-scrollbar::-webkit-scrollbar-thumb { border-radius: 999px; background: rgba(34,211,238,.42); }
+.spatial-layer-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(103,232,249,.72); }
+
+.airport-scrollbar-hidden {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  cursor: grab;
+  user-select: none;
+}
+.airport-scrollbar-hidden:active { cursor: grabbing; }
+.airport-scrollbar-hidden::-webkit-scrollbar { display: none; width: 0; height: 0; }
+
+.spatial-map-marker {
+  position: relative;
+  width: 17px;
+  height: 17px;
+  border: 3px solid #06111f;
+  border-radius: 999px;
+  background: var(--marker-color, #67e8f9);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--marker-color, #67e8f9) 44%, transparent), 0 0 22px var(--marker-color, #67e8f9);
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+.spatial-map-marker::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border: 1px solid color-mix(in srgb, var(--marker-color, #67e8f9) 52%, transparent);
+  border-radius: 999px;
+  animation: airport-pulse-ring 2.1s ease-in-out infinite;
+}
+.spatial-map-marker:hover,
+.spatial-map-marker.is-active { transform: scale(1.25); box-shadow: 0 0 0 3px rgba(255,255,255,.34), 0 0 28px var(--marker-color, #67e8f9); }
+
+.maplibregl-ctrl-group,
+.maplibregl-popup-content { border: 1px solid rgba(255,255,255,.12) !important; background: rgba(6,17,31,.92) !important; color: #e2e8f0 !important; box-shadow: 0 12px 32px rgba(0,0,0,.38) !important; }
+.maplibregl-ctrl-group button { filter: invert(1) brightness(1.35); }
+.maplibregl-ctrl-attrib { background: rgba(6,17,31,.78) !important; color: #94a3b8 !important; }
+.maplibregl-ctrl-attrib a { color: #a5f3fc !important; }
+
 @keyframes airport-grid-drift { from { transform: translateY(0); } to { transform: translateY(42px); } }
 @keyframes airport-pulse-ring { 0%,100% { transform: scale(.9); opacity: .3; } 50% { transform: scale(1.35); opacity: .05; } }
 @keyframes airport-particle { 0% { transform: translate3d(0, 12px, 0); opacity: 0; } 25% { opacity: .5; } 100% { transform: translate3d(24px, -90px, 0); opacity: 0; } }

@@ -1,5 +1,5 @@
-import React, { useMemo, useRef } from "react";
-import { Box, RotateCcw, Undo2 } from "lucide-react";
+import React, { useMemo, useRef, useState } from "react";
+import { Box, Camera, RotateCcw, SunMedium, Undo2, X } from "lucide-react";
 import { AIRPORT_3D_CONFIG } from "./airport3DConfig";
 import { useAirport3DInteraction } from "./useAirport3DInteraction";
 import { useAirportLanguage } from "../i18n/AirportLanguage";
@@ -7,6 +7,7 @@ import { useAirportLanguage } from "../i18n/AirportLanguage";
 export function AirportOverview3D({ onBack2D }: { onBack2D: () => void }) {
   const { tr } = useAirportLanguage();
   const containerRef = useRef<HTMLDivElement>(null);
+  const [settingsPanel, setSettingsPanel] = useState<"camera" | "lighting" | null>(null);
   const {
     loading,
     progress,
@@ -17,6 +18,9 @@ export function AirportOverview3D({ onBack2D }: { onBack2D: () => void }) {
     setControlMode,
     walkLocked,
     heading,
+    viewSettings,
+    setViewSettings,
+    resetViewSettings,
   } = useAirport3DInteraction(containerRef);
   const targetLabel = AIRPORT_3D_CONFIG.targets.find((item) => item.id === selectedTarget)?.label ?? selectedTarget;
   const compassDirection = useMemo(() => {
@@ -48,7 +52,48 @@ export function AirportOverview3D({ onBack2D }: { onBack2D: () => void }) {
           </button>
         </div>
         <button onClick={resetCamera} className="airport-button bg-[#06111f]/82 backdrop-blur-xl"><RotateCcw size={14} /> {tr("Reset camera")}</button>
+        <div className="flex gap-1.5">
+          <button
+            onClick={() => setSettingsPanel((current) => current === "camera" ? null : "camera")}
+            className={`airport-button flex-1 justify-center bg-[#06111f]/82 px-2 backdrop-blur-xl ${settingsPanel === "camera" ? "border-cyan-400/35 text-cyan-200" : ""}`}
+            title="Camera settings"
+          >
+            <Camera size={14} /> Camera
+          </button>
+          <button
+            onClick={() => setSettingsPanel((current) => current === "lighting" ? null : "lighting")}
+            className={`airport-button flex-1 justify-center bg-[#06111f]/82 px-2 backdrop-blur-xl ${settingsPanel === "lighting" ? "border-cyan-400/35 text-cyan-200" : ""}`}
+            title="Lighting settings"
+          >
+            <SunMedium size={14} /> Light
+          </button>
+        </div>
       </div>
+
+      {settingsPanel && (
+        <div className="absolute left-[132px] top-[116px] z-50 w-[252px] rounded-2xl border border-cyan-400/20 bg-[#071426]/94 p-4 text-white shadow-2xl backdrop-blur-2xl">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[9px] font-bold uppercase tracking-[.16em] text-cyan-300">{settingsPanel === "camera" ? "Camera view" : "Model lighting"}</p>
+              <p className="mt-1 text-[9px] text-slate-500">Thay đổi được lưu trên trình duyệt này</p>
+            </div>
+            <button onClick={() => setSettingsPanel(null)} className="airport-icon-button h-7 w-7" title="Close settings"><X size={13} /></button>
+          </div>
+          {settingsPanel === "camera" ? (
+            <div className="mt-4 space-y-4">
+              <label className="block"><span className="flex justify-between text-[10px] text-slate-300"><span>Độ cao camera</span><b className="text-cyan-200">{viewSettings.cameraHeight.toFixed(2)}</b></span><input aria-label="Camera height" type="range" min="0.72" max="1.50" step="0.01" value={viewSettings.cameraHeight} onChange={(event) => setViewSettings({ cameraHeight: Number(event.target.value) })} className="mt-2 w-full accent-cyan-300" /></label>
+              <label className="block"><span className="flex justify-between text-[10px] text-slate-300"><span>Khoảng cách</span><b className="text-cyan-200">{viewSettings.distance.toFixed(2)}</b></span><input aria-label="Camera distance" type="range" min="0.42" max="1.05" step="0.01" value={viewSettings.distance} onChange={(event) => setViewSettings({ distance: Number(event.target.value) })} className="mt-2 w-full accent-cyan-300" /></label>
+              <label className="block"><span className="flex justify-between text-[10px] text-slate-300"><span>Góc nhìn</span><b className="text-cyan-200">{viewSettings.fov}°</b></span><input aria-label="Camera field of view" type="range" min="28" max="58" step="1" value={viewSettings.fov} onChange={(event) => setViewSettings({ fov: Number(event.target.value) })} className="mt-2 w-full accent-cyan-300" /></label>
+            </div>
+          ) : (
+            <div className="mt-4">
+              <label className="block"><span className="flex justify-between text-[10px] text-slate-300"><span>Độ sáng model</span><b className="text-cyan-200">{Math.round(viewSettings.brightness * 100)}%</b></span><input aria-label="Model brightness" type="range" min="0.45" max="1.35" step="0.01" value={viewSettings.brightness} onChange={(event) => setViewSettings({ brightness: Number(event.target.value) })} className="mt-2 w-full accent-cyan-300" /></label>
+              <div className="mt-3 grid grid-cols-3 gap-1.5">{[["Dịu", 0.65], ["Chuẩn", 0.82], ["Sáng", 1.08]].map(([label, value]) => <button key={String(label)} onClick={() => setViewSettings({ brightness: Number(value) })} className="rounded-lg border border-white/10 bg-white/[.035] px-2 py-2 text-[9px] text-slate-300 hover:border-cyan-400/25 hover:text-cyan-200">{label}</button>)}</div>
+            </div>
+          )}
+          <button onClick={() => { resetViewSettings(); resetCamera(); }} className="airport-button mt-4 w-full justify-center"><RotateCcw size={13} /> Mặc định đẹp</button>
+        </div>
+      )}
 
       {!AIRPORT_3D_CONFIG.modelUrl && (
         <div className="pointer-events-none absolute left-1/2 top-[16%] w-[520px] -translate-x-1/2 rounded-2xl border border-cyan-400/15 bg-[#071426]/72 p-5 text-center backdrop-blur-xl">

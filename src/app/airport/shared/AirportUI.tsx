@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowDownUp, ChevronLeft, ChevronRight, Columns3, Download, Grid3X3, Search,
@@ -225,7 +225,65 @@ export function AirportModuleSidebar({ module, activeSection, onSectionChange, o
 
 export function AirportBottomNavigation({ activeModule, onModuleChange, onLauncher }: { activeModule: AirportModuleId; onModuleChange: (id: AirportModuleId) => void; onLauncher: () => void }) {
   const { tr, localizeModule } = useAirportLanguage();
-  return <div className="airport-scrollbar fixed bottom-4 left-1/2 z-[80] flex max-w-[calc(100vw-24px)] -translate-x-1/2 items-center gap-1 overflow-x-auto rounded-2xl border border-white/10 bg-[#06111f]/88 p-1.5 shadow-[0_20px_70px_rgba(0,0,0,.5)] backdrop-blur-2xl">{AIRPORT_MODULES.map((sourceModule) => { const module = localizeModule(sourceModule); const Icon = module.icon; const active = activeModule === module.id; return <button key={module.id} onClick={() => onModuleChange(module.id)} className={`relative flex min-w-[78px] flex-none items-center justify-center gap-1.5 rounded-xl px-2.5 py-2.5 text-[10px] font-semibold transition-colors sm:min-w-[84px] sm:gap-2 sm:px-3 ${active ? "text-[#03111e]" : "text-slate-400 hover:bg-white/5 hover:text-white"}`}>{active && <motion.span layoutId="airport-active-module" className="absolute inset-0 rounded-xl bg-cyan-300" transition={{ type: "spring", bounce: 0.18, duration: 0.55 }} />}<Icon size={14} className="relative flex-none" /><span className="relative whitespace-nowrap">{module.shortLabel}</span></button>; })}<div className="mx-1 h-7 w-px flex-none bg-white/10" /><button onClick={onLauncher} className="flex flex-none items-center gap-2 rounded-xl px-3 py-2.5 text-[10px] font-semibold text-slate-300 hover:bg-white/5 hover:text-white"><Grid3X3 size={15} />{tr("All Modules")}</button></div>;
+  const navRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef({ pointerId: -1, startX: 0, startScrollLeft: 0, moved: false });
+
+  const stopDragging = (element: HTMLDivElement, pointerId: number) => {
+    if (dragRef.current.pointerId !== pointerId) return;
+    if (element.hasPointerCapture(pointerId)) element.releasePointerCapture(pointerId);
+    dragRef.current.pointerId = -1;
+    window.setTimeout(() => { dragRef.current.moved = false; }, 0);
+  };
+
+  return (
+    <div
+      ref={navRef}
+      className="airport-scrollbar-hidden fixed bottom-4 left-1/2 z-[80] flex w-[calc(100vw-24px)] max-w-[calc(100vw-24px)] -translate-x-1/2 flex-nowrap items-center gap-1 overflow-x-auto overflow-y-hidden rounded-2xl border border-white/10 bg-[#06111f]/88 p-1.5 shadow-[0_20px_70px_rgba(0,0,0,.5)] backdrop-blur-2xl xl:w-max xl:overflow-x-hidden"
+      onWheel={(event) => {
+        const element = navRef.current;
+        if (!element || element.scrollWidth <= element.clientWidth) return;
+        if (Math.abs(event.deltaY) > Math.abs(event.deltaX)) {
+          event.preventDefault();
+          element.scrollLeft += event.deltaY;
+        }
+      }}
+      onPointerDown={(event) => {
+        if (event.button !== 0) return;
+        const element = event.currentTarget;
+        if (element.scrollWidth <= element.clientWidth + 1) {
+          dragRef.current = { pointerId: -1, startX: 0, startScrollLeft: element.scrollLeft, moved: false };
+          return;
+        }
+        dragRef.current = { pointerId: event.pointerId, startX: event.clientX, startScrollLeft: element.scrollLeft, moved: false };
+      }}
+      onPointerMove={(event) => {
+        if (dragRef.current.pointerId !== event.pointerId) return;
+        const distance = event.clientX - dragRef.current.startX;
+        if (Math.abs(distance) > 6 && !dragRef.current.moved) {
+          dragRef.current.moved = true;
+          event.currentTarget.setPointerCapture(event.pointerId);
+        }
+        if (!dragRef.current.moved) return;
+        event.currentTarget.scrollLeft = dragRef.current.startScrollLeft - distance;
+      }}
+      onPointerUp={(event) => stopDragging(event.currentTarget, event.pointerId)}
+      onPointerCancel={(event) => stopDragging(event.currentTarget, event.pointerId)}
+      onClickCapture={(event) => {
+        if (!dragRef.current.moved) return;
+        event.preventDefault();
+        event.stopPropagation();
+      }}
+    >
+      {AIRPORT_MODULES.map((sourceModule) => {
+        const module = localizeModule(sourceModule);
+        const Icon = module.icon;
+        const active = activeModule === module.id;
+        return <button key={module.id} onClick={() => onModuleChange(module.id)} className={`relative flex min-w-[84px] flex-none items-center justify-center gap-1.5 rounded-xl px-2.5 py-2.5 text-[10px] font-semibold transition-colors sm:gap-2 sm:px-3 xl:min-w-0 xl:flex-auto ${active ? "text-[#03111e]" : "text-slate-400 hover:bg-white/5 hover:text-white"}`}>{active && <motion.span layoutId="airport-active-module" className="absolute inset-0 rounded-xl bg-cyan-300" transition={{ type: "spring", bounce: 0.18, duration: 0.55 }} />}<Icon size={14} className="relative flex-none" /><span className="relative whitespace-nowrap">{module.shortLabel}</span></button>;
+      })}
+      <div className="mx-1 h-7 w-px flex-none bg-white/10" />
+      <button onClick={onLauncher} className="flex flex-none items-center justify-center gap-2 whitespace-nowrap rounded-xl px-3 py-2.5 text-[10px] font-semibold text-slate-300 hover:bg-white/5 hover:text-white xl:min-w-0 xl:flex-auto"><Grid3X3 size={15} className="flex-none" /><span className="whitespace-nowrap">{tr("All Modules")}</span></button>
+    </div>
+  );
 }
 
 export function AirportAppLauncher({ open, onClose, onSelect }: { open: boolean; onClose: () => void; onSelect: (moduleId: AirportModuleId, sectionId: string) => void }) {

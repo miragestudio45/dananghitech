@@ -107,10 +107,10 @@ export function AirportOverview({ viewMode, onViewModeChange, onOpenModule, acti
   const headlineKpis = [0, 3, 4, 8, 9].map((index) => AIRPORT_OVERVIEW_KPIS[index]);
   const overlayWidthClass = "w-[clamp(116px,9vw,150px)] max-w-[150px]";
   const overviewActionToolbarClass = viewMode === "3d"
-    ? `absolute left-3 top-[182px] z-40 flex ${overlayWidthClass} flex-col gap-2`
+    ? `absolute left-3 top-[246px] z-40 flex ${overlayWidthClass} flex-col gap-2`
     : `absolute left-3 top-[78px] z-40 flex ${overlayWidthClass} flex-col gap-2`;
   const layersPanelClass = viewMode === "3d"
-    ? `absolute left-3 top-[338px] z-40 ${overlayWidthClass} rounded-xl border border-white/10 bg-[#06111f]/91 p-3 shadow-2xl backdrop-blur-xl`
+    ? `absolute left-3 top-[402px] z-40 ${overlayWidthClass} rounded-xl border border-white/10 bg-[#06111f]/91 p-3 shadow-2xl backdrop-blur-xl`
     : `absolute left-3 top-[234px] z-40 ${overlayWidthClass} rounded-xl border border-white/10 bg-[#06111f]/91 p-3 shadow-2xl backdrop-blur-xl`;
 
   useEffect(() => {

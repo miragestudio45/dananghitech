@@ -33,13 +33,14 @@ export default function AirportModuleContent({ moduleId, sectionId }: { moduleId
   const module = localizeModule(getAirportModule(moduleId));
   const section = module.sections.find((item) => item.id === sectionId) ?? module.sections[0];
   const fullHeightBimExplorer = moduleId === "ASSETS_FM" && sectionId === "bim-explorer";
+  const fullHeightSpatialCommand = moduleId === "SPATIAL" && sectionId === "spatial-command";
 
   if (moduleId === "BMS") {
     return <motion.div key={`${moduleId}-${sectionId}`} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="h-full min-h-0"><FacilityOperationsModule sectionId={sectionId} /></motion.div>;
   }
 
   return (
-    <motion.div key={`${moduleId}-${sectionId}`} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .22 }} className={fullHeightBimExplorer ? "flex h-full min-h-0 flex-col gap-4" : "space-y-4 pb-28"}>
+    <motion.div key={`${moduleId}-${sectionId}`} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .22 }} className={fullHeightBimExplorer || fullHeightSpatialCommand ? "flex h-full min-h-0 flex-col gap-3" : "space-y-4 pb-28"}>
       <AirportSectionHeader eyebrow={module.label} title={section.label} description={section.description} actions={<><AirportStatusBadge status="normal" label={tr("Live demo")} /><button onClick={() => toast.success(language === "vi" ? "Đã tạo ảnh chụp dashboard" : "Dashboard snapshot created")} className="airport-button">{tr("Create snapshot")}</button></>} />
       {moduleId === "SPATIAL" && <SpatialDataModule sectionId={sectionId} />}
       {moduleId === "AIRPORT_OPS" && <ParkOperations sectionId={sectionId} />}
