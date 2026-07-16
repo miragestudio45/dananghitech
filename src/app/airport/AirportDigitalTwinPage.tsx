@@ -117,7 +117,7 @@ function AirportDigitalTwinPageContent() {
             />
           ) : (
             <Suspense fallback={<div className="grid min-h-[520px] place-items-center"><div className="text-center"><Loader2 className="mx-auto animate-spin text-cyan-300" /><p className="mt-3 text-xs text-slate-500">{language === "vi" ? `Đang tải ${module.label}…` : `Loading ${module.label}…`}</p></div></div>}>
-              <AirportModuleContent moduleId={activeModule} sectionId={activeSection} />
+              <AirportModuleContent moduleId={activeModule} sectionId={activeSection} onNavigateSection={changeSection} />
             </Suspense>
           )}
         </main>

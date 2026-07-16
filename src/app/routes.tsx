@@ -13,6 +13,13 @@ export const router = createBrowserRouter([
     },
   },
   {
+    path: "/site/yooenergy",
+    lazy: async () => {
+      const module = await import("./energy/YooEnergyPage");
+      return { Component: module.YooEnergyPage };
+    },
+  },
+  {
     path: "*",
     element: <Navigate to="/site/da-nang-high-tech-park" replace />,
   },

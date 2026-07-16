@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from "react";
+import { Link } from "react-router";
 import { motion } from "framer-motion";
 import {
   Activity, AlertTriangle, Boxes, Building2, CheckCircle2, CircleGauge, Cpu,
   Database, Droplets, Factory, FileCheck2, GitBranch, Handshake, HardHat,
-  Leaf, Map, MapPin, Network, Play, RadioTower, Route, ShieldCheck, Sparkles,
+  ExternalLink, Leaf, Map, MapPin, Network, Play, RadioTower, Route, ShieldCheck, Sparkles,
   Truck, Users, Waves, Wind, Workflow, Wrench, Zap,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -22,13 +23,14 @@ import {
 import { useAirportLanguage } from "../i18n/AirportLanguage";
 import { BimModelViewer } from "./BimModelViewer";
 import { FacilityOperationsModule } from "./FacilityOperationsModule";
+import { EnergyUtilityModule } from "./EnergyUtilityModule";
 import { PlanningParcelMap, SpatialDataModule } from "./SpatialDataModule";
 import { ScenarioStudio } from "./ScenarioStudio";
 import { ImplementationRoadmapModule } from "./ImplementationRoadmapModule";
 
 type Metric = [string, string, string, "cyan" | "blue" | "emerald" | "amber" | "red" | "violet"?];
 
-export default function AirportModuleContent({ moduleId, sectionId }: { moduleId: AirportModuleId; sectionId: string }) {
+export default function AirportModuleContent({ moduleId, sectionId, onNavigateSection }: { moduleId: AirportModuleId; sectionId: string; onNavigateSection?: (sectionId: string) => void }) {
   const { localizeModule, tr, language } = useAirportLanguage();
   const module = localizeModule(getAirportModule(moduleId));
   const section = module.sections.find((item) => item.id === sectionId) ?? module.sections[0];
@@ -41,11 +43,12 @@ export default function AirportModuleContent({ moduleId, sectionId }: { moduleId
 
   return (
     <motion.div key={`${moduleId}-${sectionId}`} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .22 }} className={fullHeightBimExplorer || fullHeightSpatialCommand ? "flex h-full min-h-0 flex-col gap-3" : "space-y-4 pb-28"}>
-      <AirportSectionHeader eyebrow={module.label} title={section.label} description={section.description} actions={<><AirportStatusBadge status="normal" label={tr("Live demo")} /><button onClick={() => toast.success(language === "vi" ? "Đã tạo ảnh chụp dashboard" : "Dashboard snapshot created")} className="airport-button">{tr("Create snapshot")}</button></>} />
+      <AirportSectionHeader eyebrow={module.label} title={section.label} description={section.description} actions={<>{moduleId === "ENERGY" && <Link to="/site/yooenergy" className="airport-button !border-cyan-300/25 !bg-cyan-300/10 !text-cyan-100"><ExternalLink size={13}/>{language === "vi" ? "Mở YooEnergy" : "Open YooEnergy"}</Link>}<AirportStatusBadge status={moduleId === "ENERGY" ? "info" : "normal"} label={moduleId === "ENERGY" ? (language === "vi" ? "Dữ liệu trình diễn" : "Presentation data") : tr("Live demo")} /><button onClick={() => toast.success(language === "vi" ? "Đã tạo ảnh chụp dashboard" : "Dashboard snapshot created")} className="airport-button">{tr("Create snapshot")}</button></>} />
       {moduleId === "SPATIAL" && <SpatialDataModule sectionId={sectionId} />}
       {moduleId === "AIRPORT_OPS" && <ParkOperations sectionId={sectionId} />}
       {moduleId === "PASSENGERS" && <LandTenantOperations sectionId={sectionId} />}
       {moduleId === "ASSETS_FM" && <FacilityManagement sectionId={sectionId} />}
+      {moduleId === "ENERGY" && <EnergyUtilityModule sectionId={sectionId} onNavigateSection={onNavigateSection} />}
       {moduleId === "INTELLIGENCE" && <IntelligenceOperations sectionId={sectionId} />}
       {moduleId === "SAFETY" && <SafetyEnvironmentOperations sectionId={sectionId} />}
       {moduleId === "SYSTEMS" && <SystemsOperations sectionId={sectionId} />}

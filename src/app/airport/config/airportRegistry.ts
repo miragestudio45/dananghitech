@@ -15,6 +15,7 @@ export type AirportModuleId =
   | "PASSENGERS"
   | "ASSETS_FM"
   | "BMS"
+  | "ENERGY"
   | "INTELLIGENCE"
   | "SAFETY"
   | "SYSTEMS";
@@ -127,6 +128,24 @@ export const AIRPORT_MODULES: AirportModuleDefinition[] = [
       { id: "vertical-transport-ebo", label: "Vertical Transport", description: "Elevators, escalators, traffic and maintenance status", icon: ArrowUpDown },
       { id: "ebo-alarms-events", label: "Alarms & Events", description: "Cross-domain EBO alarm queue, ownership and response", icon: Activity },
       { id: "ebo-trends-reports", label: "Trends & Reports", description: "Historian, performance trends, SLA and automated reporting", icon: BarChart3 },
+    ],
+  },
+  {
+    id: "ENERGY", label: "Energy & Utility Management", shortLabel: "YooEnergy", icon: Gauge,
+    accent: "cyan", defaultSection: "energy-command",
+    sections: [
+      { id: "energy-command", label: "Energy Command Center", description: "Park-wide electricity, water, thermal, gas, budget, emissions and operational posture", icon: CircleGauge },
+      { id: "electricity", label: "Electricity", description: "Demand, energy, peak, power factor, harmonics, tariff and carbon performance", icon: Zap },
+      { id: "water-utilities", label: "Water Utilities", description: "Cold water, hot water, flow, pressure, balance, leakage and cost", icon: Droplets },
+      { id: "thermal-btu", label: "Thermal & BTU", description: "District cooling, BTU metering, supply-return temperature, ΔT and tenant allocation", icon: Snowflake },
+      { id: "gas", label: "Gas", description: "Gas flow, pressure, consumption, leak status and cost allocation", icon: Flame },
+      { id: "meter-management", label: "Meter Management", description: "Meter registry, hierarchy, protocol, gateway, mapping, data quality and diagnostics", icon: Gauge },
+      { id: "tenant-billing", label: "Tenant Billing", description: "Tariff versions, utility allocation, validation, approval, statements and notification", icon: FileCheck2 },
+      { id: "budgets-alerts", label: "Budget & Alerts", description: "Self-service budgets, thresholds, notification channels and escalation workflows", icon: Activity },
+      { id: "ai-analytics", label: "AI Analytics", description: "Forecasting, anomaly detection, leakage, peak demand and explainable recommendations", icon: BrainCircuit },
+      { id: "reports", label: "Reports", description: "Scheduled and on-demand energy, billing, power quality, water, BTU and ESG reports", icon: BarChart3 },
+      { id: "gateway-management", label: "Gateway Management", description: "MQTT, HTTP, Modbus, BACnet/IP, M-Bus, OPC UA and edge health", icon: Cpu },
+      { id: "ebo-digital-twin-integration", label: "EBO & Digital Twin Integration", description: "Bidirectional EBO, SCADA, tenant portal, ERP and Digital Twin integration", icon: GitBranch },
     ],
   },
   {
