@@ -18,6 +18,7 @@ import {
   AirportTimeline,
 } from "../shared/AirportUI";
 import { useAirportLanguage } from "../i18n/AirportLanguage";
+import { downloadTabularFile, type ExportFileFormat, type ExportRow } from "../../energy/exportUtils";
 
 type Tone = "cyan" | "blue" | "emerald" | "amber" | "red" | "violet";
 type Metric = [string, string, string, Tone];
@@ -177,6 +178,19 @@ function DemoDataNotice({ currentSectionId, onOpenAlertSetup }: { currentSection
   return <div data-yooenergy-demo-notice className="flex flex-wrap items-start gap-2 rounded-lg border border-amber-300/15 bg-amber-300/[.045] px-3 py-2 text-[9px] leading-relaxed text-amber-100/75"><AlertTriangle size={13} className="mt-0.5 flex-none text-amber-300"/><span className="min-w-0 flex-1">{language === "vi" ? "Dữ liệu trình diễn: các kênh MQTT, HTTP, Modbus, BACnet, Email và Zalo OA chưa kết nối tới thiết bị hoặc dịch vụ thực tế." : "Presentation data: MQTT, HTTP, Modbus, BACnet, Email and Zalo OA channels are not connected to live field devices or services."}</span>{onOpenAlertSetup && <button type="button" onClick={onOpenAlertSetup} className="rounded-md border border-amber-200/20 bg-amber-200/[.08] px-2 py-1 font-semibold text-amber-50 transition hover:border-cyan-300/30 hover:bg-cyan-300/10 hover:text-cyan-100">{currentSectionId === "budgets-alerts" ? (language === "vi" ? "Tạo rule cảnh báo" : "Create alert rule") : (language === "vi" ? "Thiết lập cảnh báo" : "Set up alert")}</button>}</div>;
 }
 
+const EXPORT_FORMAT_DETAILS: Record<ExportFileFormat, { label: string; vi: string; en: string }> = {
+  xlsx: { label: "XLSX", vi: "Khuyến nghị · Phân tích và gửi nghiệp vụ", en: "Recommended · Analysis and business sharing" },
+  csv: { label: "CSV", vi: "Dữ liệu bảng nhẹ · BI và data tools", en: "Lightweight table · BI and data tools" },
+  json: { label: "JSON", vi: "Tích hợp API · Giữ cấu trúc dữ liệu", en: "API integration · Preserves data structure" },
+  txt: { label: "TXT", vi: "Log và dữ liệu đọc nhanh", en: "Logs and quick-readable data" },
+  pdf: { label: "PDF", vi: "Báo cáo trình bày và phê duyệt", en: "Presentation and approval report" },
+};
+
+function ExportFormatPicker({ value, onChange, formats }: { value: ExportFileFormat; onChange: (format: ExportFileFormat) => void; formats: ExportFileFormat[] }) {
+  const { language } = useAirportLanguage();
+  return <div className="grid gap-2 sm:grid-cols-2">{formats.map((format) => { const detail = EXPORT_FORMAT_DETAILS[format]; const active = value === format; return <button type="button" key={format} onClick={() => onChange(format)} className={`relative rounded-xl border p-3 text-left transition ${active ? "border-cyan-300/35 bg-cyan-300/10 shadow-[0_0_20px_rgba(34,211,238,.12)]" : "border-white/[.07] bg-white/[.025] hover:border-cyan-300/20 hover:bg-cyan-300/[.04]"}`}><div className="flex items-center justify-between gap-3"><span className={`text-[11px] font-bold ${active ? "text-cyan-100" : "text-slate-300"}`}>{detail.label}</span>{format === "xlsx" && <span className="rounded-full bg-emerald-300/10 px-2 py-0.5 text-[8px] font-semibold text-emerald-300">{language === "vi" ? "Khuyên dùng" : "Recommended"}</span>}</div><p className="mt-1 text-[9px] leading-relaxed text-slate-500">{language === "vi" ? detail.vi : detail.en}</p></button>})}</div>;
+}
+
 function EnergyCommandCenter({ onNavigateSection }: { onNavigateSection?: (sectionId: string) => void }) {
   const { language } = useAirportLanguage();
   const [selectedUtility, setSelectedUtility] = useState<UtilityKind>("electricity");
@@ -291,13 +305,38 @@ function MeterManagement() {
   const [search, setSearch] = useState("");
   const [utility, setUtility] = useState<"all" | UtilityKind>("all");
   const [selected, setSelected] = useState<Meter | null>(null);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [exportFormat, setExportFormat] = useState<ExportFileFormat>("xlsx");
   const rows = METERS.filter((meter) => (utility === "all" || meter.utility === utility) && `${meter.id} ${meter.name} ${meter.tenant}`.toLowerCase().includes(search.toLowerCase()));
+  const exportRows: ExportRow[] = rows.map((meter) => ({
+    "Meter ID": meter.id,
+    Name: meter.name,
+    Utility: UTILITY_META[meter.utility].label,
+    Site: meter.site,
+    Tenant: meter.tenant,
+    Protocol: meter.protocol,
+    Gateway: meter.gateway,
+    "Current value": meter.value,
+    "Data quality (%)": meter.quality,
+    "Last seen": meter.lastSeen,
+    Status: meter.status,
+  }));
+  const exportMeters = () => {
+    try {
+      const fileName = downloadTabularFile({ baseName: `yooenergy-meter-registry-${new Date().toISOString().slice(0, 10)}`, sheetName: "Meter Registry", rows: exportRows, format: exportFormat });
+      setExportOpen(false);
+      toast.success(`${language === "vi" ? "Đã tải xuống" : "Downloaded"} ${fileName}`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Export failed");
+    }
+  };
   return <div className="space-y-4">
     <MetricGrid metrics={[["Metering points","2,504","5 utility types","cyan"],["Online","2,486","99.28%","emerald"],["Data validated","97.8%","42 flags","blue"],["Virtual meters","184","Calculated","violet"],["Calibration due","28","30 days","amber"],["Unmapped tenants","6","Action required","red"]]}/>
     <AirportPanel title={language === "vi" ? "Danh mục đồng hồ & điểm đo" : "Meter and measurement-point registry"} action={<button className="airport-button" onClick={() => toast.success("New meter onboarding workflow opened")}><Settings2 size={14}/>Onboard meter</button>}>
-      <div className="border-b border-white/[.06] p-3"><div className="flex flex-wrap gap-2"><label className="flex min-w-64 flex-1 items-center gap-2 rounded-lg border border-white/[.08] bg-white/[.03] px-3 py-2"><Search size={14} className="text-slate-500"/><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search meter, tenant or site…" className="w-full bg-transparent text-xs text-white outline-none"/></label><select className="airport-select" value={utility} onChange={(event) => setUtility(event.target.value as "all"|UtilityKind)}><option value="all">All utilities</option>{(Object.keys(UTILITY_META) as UtilityKind[]).map((key) => <option key={key} value={key}>{UTILITY_META[key].label}</option>)}</select><button className="airport-button"><Download size={14}/>Export</button></div></div>
+      <div className="border-b border-white/[.06] p-3"><div className="flex flex-wrap gap-2"><label className="flex min-w-64 flex-1 items-center gap-2 rounded-lg border border-white/[.08] bg-white/[.03] px-3 py-2"><Search size={14} className="text-slate-500"/><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search meter, tenant or site…" className="w-full bg-transparent text-xs text-white outline-none"/></label><select className="airport-select" value={utility} onChange={(event) => setUtility(event.target.value as "all"|UtilityKind)}><option value="all">All utilities</option>{(Object.keys(UTILITY_META) as UtilityKind[]).map((key) => <option key={key} value={key}>{UTILITY_META[key].label}</option>)}</select><button data-open-meter-export type="button" onClick={() => setExportOpen(true)} className="airport-button !border-cyan-300/25 !bg-cyan-300/[.08] !font-semibold !text-cyan-100"><Download size={14} className="text-cyan-300"/>{language === "vi" ? "Xuất dữ liệu" : "Export"}</button></div></div>
       <div className="airport-scrollbar overflow-x-auto"><table className="w-full min-w-[1180px] text-left"><thead className="sticky top-0 bg-[#08172a]"><tr>{["Meter ID","Name","Utility","Site / Tenant","Protocol","Gateway","Live value","Quality","Last seen","Status"].map((header) => <th key={header} className="px-3 py-3 text-[8px] uppercase tracking-[.1em] text-slate-500">{header}</th>)}</tr></thead><tbody>{rows.map((meter) => <tr key={meter.id} onClick={() => setSelected(meter)} className="cursor-pointer border-t border-white/[.05] hover:bg-cyan-400/[.035]"><td className="px-3 py-3 text-[10px] font-semibold text-cyan-300">{meter.id}</td><td className="px-3 py-3 text-[10px] text-white">{meter.name}</td><td className="px-3 py-3 text-[10px] text-slate-400">{UTILITY_META[meter.utility].label}</td><td className="px-3 py-3"><p className="text-[10px] text-slate-300">{meter.site}</p><p className="text-[9px] text-slate-600">{meter.tenant}</p></td><td className="px-3 py-3 text-[10px] text-slate-400">{meter.protocol}</td><td className="px-3 py-3 text-[10px] text-slate-400">{meter.gateway}</td><td className="px-3 py-3 text-[10px] font-semibold text-white">{meter.value}</td><td className="px-3 py-3 text-[10px] text-slate-300">{meter.quality}%</td><td className="px-3 py-3 text-[10px] text-slate-500">{meter.lastSeen}</td><td className="px-3 py-3"><AirportStatusBadge status={meter.status}/></td></tr>)}</tbody></table></div>
     </AirportPanel>
+    <AirportDetailDrawer open={exportOpen} title={language === "vi" ? "Xuất danh mục đồng hồ" : "Export meter registry"} subtitle={`${rows.length} ${language === "vi" ? "bản ghi theo bộ lọc hiện tại" : "records from the current filter"}`} onClose={() => setExportOpen(false)}><div className="space-y-4"><div className="rounded-xl border border-cyan-300/14 bg-cyan-300/[.045] p-4"><p className="text-[10px] font-semibold text-white">{language === "vi" ? "Chọn định dạng file" : "Choose a file format"}</p><p className="mt-1 text-[9px] leading-relaxed text-slate-500">{language === "vi" ? "XLSX phù hợp nhất cho nghiệp vụ. CSV dùng cho BI, JSON cho tích hợp và TXT cho log." : "XLSX is best for business use. Choose CSV for BI, JSON for integrations or TXT for logs."}</p></div><ExportFormatPicker value={exportFormat} onChange={setExportFormat} formats={["xlsx","csv","json","txt"]}/><div className="grid grid-cols-2 gap-2"><button type="button" onClick={() => setExportOpen(false)} className="airport-button w-full justify-center">{language === "vi" ? "Hủy" : "Cancel"}</button><button data-confirm-meter-export type="button" onClick={exportMeters} className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-cyan-100/30 bg-gradient-to-r from-cyan-300 to-sky-400 px-3 py-2.5 text-[10px] font-bold text-slate-950 shadow-[0_0_22px_rgba(34,211,238,.24)] transition hover:brightness-110"><Download size={14}/>{language === "vi" ? `Tải ${exportFormat.toUpperCase()}` : `Download ${exportFormat.toUpperCase()}`}</button></div></div></AirportDetailDrawer>
     <AirportDetailDrawer open={Boolean(selected)} title={selected?.name ?? "Meter detail"} subtitle={selected?.id} onClose={() => setSelected(null)}>{selected && <div className="space-y-4"><div className="grid grid-cols-2 gap-2">{[["Utility",UTILITY_META[selected.utility].label],["Current value",selected.value],["Protocol",selected.protocol],["Gateway",selected.gateway],["Tenant",selected.tenant],["Data quality",`${selected.quality}%`]].map(([label,value]) => <div key={label} className="rounded-lg border border-white/[.06] bg-white/[.025] p-3"><p className="text-[9px] text-slate-500">{label}</p><p className="mt-1 text-[11px] font-semibold text-white">{value}</p></div>)}</div><AirportPanel title="Meter data chain"><div className="space-y-2 p-3">{["Physical meter / analyzer","Edge gateway and buffering","Protocol normalization","Time-series validation","Tariff and billing engine","Digital Twin / EBO / tenant portal"].map((item,index) => <div key={item} className="flex items-center gap-3 rounded-lg border border-cyan-400/10 bg-cyan-400/[.035] p-3"><span className="grid h-7 w-7 place-items-center rounded-full bg-cyan-400/10 text-[10px] font-bold text-cyan-300">{index+1}</span><span className="text-[10px] text-slate-300">{item}</span></div>)}</div></AirportPanel><button onClick={() => toast.success("Diagnostic command queued with audit trail")} className="airport-button w-full justify-center"><RefreshCw size={14}/>Run diagnostics</button></div>}</AirportDetailDrawer>
   </div>;
 }
@@ -315,6 +354,11 @@ function TenantBilling() {
     ["Common utility allocation", "8.4% share", "Portfolio pool", "₫126.8M"],
     ["Tax and adjustments", "VAT + reconciliation", "Approved", "₫106.6M"],
   ];
+  const downloadStatement = () => {
+    const statementRows: ExportRow[] = chargeItems.map(([item, quantity, tariff, amount]) => ({ Item: item, Quantity: quantity, "Tariff / Rule": tariff, Amount: amount }));
+    const fileName = downloadTabularFile({ baseName: `utility-statement-${tenant}-${period}`, sheetName: `${tenant} ${period}`, rows: statementRows, format: "pdf" });
+    toast.success(`${language === "vi" ? "Đã tải xuống" : "Downloaded"} ${fileName}`);
+  };
   return <div className="space-y-4">
     <MetricGrid metrics={[["Billing tenants","186","184 validated","cyan"],["Statements MTD","184","98.9%","emerald"],["Gross utility charge","₫42.86B","July 2026","blue"],["Pending review","2","TEN-118 / TEN-042","amber"],["Collection rate","97.4%","+0.8 pt","emerald"],["Adjustments","₫284M","0.66%","cyan"]]}/>
     <div className="grid gap-4 2xl:grid-cols-[1.25fr_.75fr]">
@@ -328,7 +372,7 @@ function TenantBilling() {
     <AirportPanel title="Billing workflow and statement status"><div className="grid grid-cols-2 gap-3 p-4 md:grid-cols-3 xl:grid-cols-5">{[
       ["Meter readings","2,486 validated",Database],["Consumption calculation","184 tenants",Activity],["Tariff engine","12 active versions",CircleDollarSign],["Approval","2 pending",ShieldCheck],["Notification","App · Email · Zalo",BellRing],
     ].map(([label,detail,Icon],index) => <div key={String(label)} className="relative rounded-xl border border-cyan-400/12 bg-cyan-400/[.035] p-4"><Icon size={18} className="text-cyan-300"/><p className="mt-3 text-[10px] font-semibold text-white">{String(label)}</p><p className="mt-1 text-[9px] text-slate-500">{String(detail)}</p>{index<4&&<GitBranch size={16} className="absolute -right-4 top-1/2 text-cyan-300/45"/>}</div>)}</div></AirportPanel>
-    <AirportDetailDrawer open={previewOpen} title="Utility statement preview" subtitle={`${tenant} · ${period}`} onClose={() => setPreviewOpen(false)}><div className="space-y-4"><div className="rounded-xl border border-cyan-400/15 bg-gradient-to-br from-cyan-400/[.08] to-transparent p-5"><p className="text-[9px] uppercase tracking-[.16em] text-cyan-300">Amount due</p><p className="mt-2 text-3xl font-semibold text-white">₫4.286B</p><p className="mt-2 text-[10px] text-slate-500">Due 31 July 2026</p></div>{chargeItems.map((row) => <div key={row[0]} className="flex justify-between border-b border-white/[.06] py-2 text-[10px]"><span className="text-slate-400">{row[0]}</span><span className="font-semibold text-white">{row[3]}</span></div>)}<button onClick={() => toast.success("PDF statement generated")} className="airport-button w-full justify-center"><Download size={14}/>Generate PDF</button></div></AirportDetailDrawer>
+    <AirportDetailDrawer open={previewOpen} title="Utility statement preview" subtitle={`${tenant} · ${period}`} onClose={() => setPreviewOpen(false)}><div className="space-y-4"><div className="rounded-xl border border-cyan-400/15 bg-gradient-to-br from-cyan-400/[.08] to-transparent p-5"><p className="text-[9px] uppercase tracking-[.16em] text-cyan-300">Amount due</p><p className="mt-2 text-3xl font-semibold text-white">₫4.286B</p><p className="mt-2 text-[10px] text-slate-500">Due 31 July 2026</p></div>{chargeItems.map((row) => <div key={row[0]} className="flex justify-between border-b border-white/[.06] py-2 text-[10px]"><span className="text-slate-400">{row[0]}</span><span className="font-semibold text-white">{row[3]}</span></div>)}<button data-download-statement-pdf type="button" onClick={downloadStatement} className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-cyan-100/30 bg-gradient-to-r from-cyan-300 to-sky-400 px-3 py-2.5 text-[10px] font-bold text-slate-950 shadow-[0_0_22px_rgba(34,211,238,.24)] transition hover:brightness-110"><Download size={14}/>{language === "vi" ? "Tải PDF" : "Download PDF"}</button></div></AirportDetailDrawer>
   </div>;
 }
 
@@ -456,7 +500,8 @@ function ReportsCenter() {
   const { language } = useAirportLanguage();
   const [startTime, setStartTime] = useState("00:00");
   const [endTime, setEndTime] = useState("23:30");
-  const [format, setFormat] = useState("PDF");
+  const [format, setFormat] = useState<ExportFileFormat>("xlsx");
+  const [template, setTemplate] = useState("Energy & Utility Portfolio");
   const reports = [
     ["Monthly Energy & Utility Portfolio", "Portfolio", "Monthly", "PDF + XLSX", "Ready"],
     ["Tenant Utility Statement Pack", "Tenant", "Monthly", "PDF", "Ready"],
@@ -465,10 +510,28 @@ function ReportsCenter() {
     ["BTU Low-ΔT Performance", "Thermal", "Weekly", "PDF", "Scheduled"],
     ["Carbon & ESG Utility Report", "ESG", "Monthly", "PDF + API", "Draft"],
   ];
+  const generateReport = () => {
+    const startIndex = TIME_SLOTS.indexOf(startTime);
+    const endIndex = TIME_SLOTS.indexOf(endTime);
+    if (startIndex < 0 || endIndex < startIndex) {
+      toast.error(language === "vi" ? "Giờ kết thúc phải sau giờ bắt đầu" : "End time must be after start time");
+      return;
+    }
+    const reportRows: ExportRow[] = series(11, 72, 16).slice(startIndex, endIndex + 1).map((point) => ({
+      Report: template,
+      Time: point.time,
+      "Actual value": point.value,
+      "Forecast value": point.forecast ?? "",
+      Unit: "kWh",
+      "Data quality": "Validated",
+    }));
+    const fileName = downloadTabularFile({ baseName: `yooenergy-${template}-${startTime}-${endTime}`, sheetName: "Energy Report", rows: reportRows, format });
+    toast.success(`${language === "vi" ? "Đã tải xuống" : "Downloaded"} ${fileName}`);
+  };
   return <div className="space-y-4">
     <MetricGrid metrics={[["Report templates","42","12 domains","cyan"],["Scheduled reports","84","Next 18:00","blue"],["Generated MTD","1,284","99.8% success","emerald"],["Subscribers","386","App + Email","cyan"],["Exports today","128","PDF / XLSX / API","violet"],["Failed jobs","2","Retry queued","amber"]]}/>
     <div className="grid gap-4 xl:grid-cols-[.8fr_1.2fr]">
-      <AirportPanel title={language === "vi" ? "Tạo báo cáo theo thời gian" : "Create time-bounded report"}><div className="space-y-4 p-4"><div className="grid grid-cols-1 gap-3 sm:grid-cols-2"><label><span className="mb-1 block text-[9px] text-slate-500">{language === "vi" ? "Giờ bắt đầu" : "Start time"}</span><select data-report-start-time className="airport-select w-full" value={startTime} onChange={(event) => setStartTime(event.target.value)}>{TIME_SLOTS.map((slot)=><option key={slot}>{slot}</option>)}</select></label><label><span className="mb-1 block text-[9px] text-slate-500">{language === "vi" ? "Giờ kết thúc" : "End time"}</span><select data-report-end-time className="airport-select w-full" value={endTime} onChange={(event) => setEndTime(event.target.value)}>{TIME_SLOTS.map((slot)=><option key={slot}>{slot}</option>)}</select></label></div><label><span className="mb-1 block text-[9px] text-slate-500">Report template</span><select className="airport-select w-full"><option>Energy & Utility Portfolio</option><option>Tenant Statement</option><option>Power Quality Events</option><option>Water Balance</option><option>BTU Performance</option></select></label><label><span className="mb-1 block text-[9px] text-slate-500">Output format</span><select className="airport-select w-full" value={format} onChange={(event) => setFormat(event.target.value)}>{["PDF","XLSX","CSV","JSON / API"].map((item)=><option key={item}>{item}</option>)}</select></label><div className="rounded-lg border border-cyan-400/12 bg-cyan-400/[.035] p-3 text-[9px] text-slate-400">Selected window: <b className="text-cyan-200">{startTime} → {endTime}</b>. Time options are available every 30 minutes from 00:00 to 23:30.</div><button onClick={() => toast.success(`Report generated · ${startTime}–${endTime} · ${format}`)} className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-cyan-100/30 bg-gradient-to-r from-cyan-300 to-sky-400 px-3 py-2.5 text-[10px] font-bold text-slate-950 shadow-[0_0_22px_rgba(34,211,238,.24)] transition hover:-translate-y-0.5 hover:brightness-110 hover:shadow-[0_0_30px_rgba(34,211,238,.36)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/70"><FileBarChart size={14}/>Generate report</button></div></AirportPanel>
+      <AirportPanel title={language === "vi" ? "Tạo báo cáo theo thời gian" : "Create time-bounded report"}><div className="space-y-4 p-4"><div className="grid grid-cols-1 gap-3 sm:grid-cols-2"><label><span className="mb-1 block text-[9px] text-slate-500">{language === "vi" ? "Giờ bắt đầu" : "Start time"}</span><select data-report-start-time className="airport-select w-full" value={startTime} onChange={(event) => setStartTime(event.target.value)}>{TIME_SLOTS.map((slot)=><option key={slot}>{slot}</option>)}</select></label><label><span className="mb-1 block text-[9px] text-slate-500">{language === "vi" ? "Giờ kết thúc" : "End time"}</span><select data-report-end-time className="airport-select w-full" value={endTime} onChange={(event) => setEndTime(event.target.value)}>{TIME_SLOTS.map((slot)=><option key={slot}>{slot}</option>)}</select></label></div><label><span className="mb-1 block text-[9px] text-slate-500">Report template</span><select className="airport-select w-full" value={template} onChange={(event) => setTemplate(event.target.value)}>{["Energy & Utility Portfolio","Tenant Statement","Power Quality Events","Water Balance","BTU Performance"].map((item)=><option key={item}>{item}</option>)}</select></label><div><p className="mb-2 text-[9px] text-slate-500">{language === "vi" ? "Định dạng xuất file" : "Export file format"}</p><ExportFormatPicker value={format} onChange={setFormat} formats={["xlsx","pdf","csv","json","txt"]}/></div><div className="rounded-lg border border-cyan-400/12 bg-cyan-400/[.035] p-3 text-[9px] text-slate-400">Selected window: <b className="text-cyan-200">{startTime} → {endTime}</b>. Time options are available every 30 minutes from 00:00 to 23:30.</div><button data-download-report type="button" onClick={generateReport} className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-cyan-100/30 bg-gradient-to-r from-cyan-300 to-sky-400 px-3 py-2.5 text-[10px] font-bold text-slate-950 shadow-[0_0_22px_rgba(34,211,238,.24)] transition hover:-translate-y-0.5 hover:brightness-110 hover:shadow-[0_0_30px_rgba(34,211,238,.36)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/70"><Download size={14}/>{language === "vi" ? `Tải ${format.toUpperCase()}` : `Download ${format.toUpperCase()}`}</button></div></AirportPanel>
       <AirportPanel title={language === "vi" ? "Thư viện báo cáo và lịch gửi" : "Report library and delivery schedules"}><div className="overflow-x-auto"><table className="w-full"><thead className="bg-white/[.03]"><tr>{["Report","Domain","Frequency","Output","Status"].map((header)=><th key={header} className="px-3 py-3 text-left text-[8px] uppercase tracking-[.1em] text-slate-500">{header}</th>)}</tr></thead><tbody>{reports.map((row)=><tr key={row[0]} className="border-t border-white/[.05]"><td className="px-3 py-3 text-[10px] font-semibold text-white">{row[0]}</td><td className="px-3 py-3 text-[10px] text-slate-400">{row[1]}</td><td className="px-3 py-3 text-[10px] text-slate-400">{row[2]}</td><td className="px-3 py-3 text-[10px] text-cyan-300">{row[3]}</td><td className="px-3 py-3"><AirportStatusBadge status={row[4]==="Ready"?"normal":row[4]==="Draft"?"warning":"info"} label={row[4]}/></td></tr>)}</tbody></table></div></AirportPanel>
     </div>
     <AirportPanel title="Delivery subscriptions"><div className="grid grid-cols-2 gap-3 p-4 xl:grid-cols-4">{[["Mobile app","184 subscribers",Smartphone],["Email","386 recipients",Mail],["Zalo OA","128 tenants",MessageCircle],["API / Webhook","42 integrations",Webhook]].map(([name,detail,Icon])=><div key={String(name)} className="rounded-xl border border-white/[.07] bg-white/[.025] p-4"><Icon size={18} className="text-cyan-300"/><p className="mt-3 text-[10px] font-semibold text-white">{String(name)}</p><p className="mt-1 text-[9px] text-slate-500">{String(detail)}</p></div>)}</div></AirportPanel>
