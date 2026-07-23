@@ -9,6 +9,7 @@ import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.j
 import { AIRPORT_3D_CONFIG } from "./airport3DConfig";
 
 export type Airport3DControlMode = "orbit" | "walk";
+export type Airport3DSceneMode = "overview" | "factory";
 
 export type Airport3DViewSettings = {
   cameraHeight: number;
@@ -316,10 +317,18 @@ function disposeMaterial(material: THREE.Material | THREE.Material[]) {
   });
 }
 
-export function useAirport3DInteraction(containerRef: React.RefObject<HTMLDivElement | null>) {
+export function useAirport3DInteraction(
+  containerRef: React.RefObject<HTMLDivElement | null>,
+  options: {
+    sceneMode: Airport3DSceneMode;
+    onEnterFactory: () => void;
+  },
+) {
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [ready, setReady] = useState(false);
+  const [transitioning, setTransitioning] = useState(false);
   const [selectedTarget, setSelectedTarget] = useState<string | null>(null);
   const [controlMode, setControlModeState] = useState<Airport3DControlMode>("orbit");
   const [walkLocked, setWalkLocked] = useState(false);
@@ -338,11 +347,15 @@ export function useAirport3DInteraction(containerRef: React.RefObject<HTMLDivEle
   const controlModeRef = useRef<Airport3DControlMode>("orbit");
   const setControlModeRef = useRef<(mode: Airport3DControlMode) => void>(() => undefined);
   const applyViewSettingsRef = useRef<(next: Airport3DViewSettings, previous: Airport3DViewSettings) => void>(() => undefined);
+  const optionsRef = useRef(options);
+  optionsRef.current = options;
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
+    const sceneMode = optionsRef.current.sceneMode;
+    const isFactoryScene = sceneMode === "factory";
     let disposed = false;
     let raf = 0;
     let resizeObserver: ResizeObserver | undefined;
@@ -360,9 +373,12 @@ export function useAirport3DInteraction(containerRef: React.RefObject<HTMLDivEle
     let walkLookTarget = new THREE.Vector3(1.4, walkGroundY + walkEyeHeight, -0.8);
     let lastHeading = Number.NaN;
 
+    setReady(false);
+    setTransitioning(false);
+    setSelectedTarget(null);
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(AIRPORT_3D_CONFIG.background);
-    scene.fog = new THREE.FogExp2(0x020a14, 0.0012);
+    scene.fog = new THREE.FogExp2(0x020a14, isFactoryScene ? 0.00038 : 0.0012);
 
     const camera = new THREE.PerspectiveCamera(
       AIRPORT_3D_CONFIG.defaultCamera.fov,
@@ -502,11 +518,42 @@ export function useAirport3DInteraction(containerRef: React.RefObject<HTMLDivEle
     const pointer = new THREE.Vector2();
     const interactiveMeshes: THREE.Mesh[] = [];
     const walkableGroundMeshes: THREE.Mesh[] = [];
+    const factoryShellMeshes: THREE.Mesh[] = [];
     const targetMeshes = new Map<string, THREE.Mesh[]>();
     const originalMaterials = new Map<THREE.Mesh, THREE.Material | THREE.Material[]>();
     const highlightMaterials = new Map<THREE.Mesh, THREE.Material | THREE.Material[]>();
     let hoveredTarget: string | null = null;
     let pointerDown: { x: number; y: number } | null = null;
+    let cameraFlight: {
+      elapsed: number;
+      duration: number;
+      startPosition: THREE.Vector3;
+      startTarget: THREE.Vector3;
+      endPosition: THREE.Vector3;
+      endTarget: THREE.Vector3;
+      onComplete?: () => void;
+    } | null = null;
+
+    const startCameraFlight = (
+      endPosition: THREE.Vector3,
+      endTarget: THREE.Vector3,
+      duration: number,
+      onComplete?: () => void,
+    ) => {
+      if (walkControls.isLocked) walkControls.unlock();
+      controlModeRef.current = "orbit";
+      setControlModeState("orbit");
+      orbitControls.enabled = false;
+      cameraFlight = {
+        elapsed: 0,
+        duration,
+        startPosition: camera.position.clone(),
+        startTarget: orbitControls.target.clone(),
+        endPosition,
+        endTarget,
+        onComplete,
+      };
+    };
 
     const getWalkGroundHeight = (x: number, z: number, fallback: number) => {
       if (!walkableGroundMeshes.length) return fallback;
@@ -538,6 +585,11 @@ export function useAirport3DInteraction(containerRef: React.RefObject<HTMLDivEle
           if (clone instanceof THREE.MeshStandardMaterial || clone instanceof THREE.MeshPhysicalMaterial) {
             clone.emissive = new THREE.Color(0x00d8ff);
             clone.emissiveIntensity = 0.4;
+            if (mesh.userData.airportEntryFallback) {
+              clone.transparent = true;
+              clone.opacity = 0.14;
+              clone.depthWrite = false;
+            }
           }
           clone.needsUpdate = true;
           return clone;
@@ -582,8 +634,8 @@ export function useAirport3DInteraction(containerRef: React.RefObject<HTMLDivEle
       camera.updateProjectionMatrix();
       walkEyeHeight = THREE.MathUtils.clamp(
         walkBaseEyeHeight * (next.cameraHeight / LEGACY_CAMERA_HEIGHT_BASE),
-        0.6,
-        1.8,
+        isFactoryScene ? 8 : 0.6,
+        isFactoryScene ? 18 : 1.8,
       );
       if (controlModeRef.current === "walk") {
         camera.position.y = walkGroundY + walkEyeHeight;
@@ -593,7 +645,7 @@ export function useAirport3DInteraction(containerRef: React.RefObject<HTMLDivEle
       const cameraChanged = next.cameraHeight !== previous.cameraHeight
         || next.distance !== previous.distance
         || next.fov !== previous.fov;
-      if (cameraChanged && loadedRoot) fitObject(loadedRoot, next.distance, true);
+      if (cameraChanged && loadedRoot && !isFactoryScene) fitObject(loadedRoot, next.distance, true);
     };
     applyViewSettingsRef.current = applyViewSettings;
 
@@ -692,6 +744,8 @@ export function useAirport3DInteraction(containerRef: React.RefObject<HTMLDivEle
     };
 
     const resetCamera = () => {
+      cameraFlight = null;
+      setTransitioning(false);
       camera.position.copy(homePosition);
       orbitControls.target.copy(homeTarget);
       camera.lookAt(homeTarget);
@@ -705,8 +759,12 @@ export function useAirport3DInteraction(containerRef: React.RefObject<HTMLDivEle
     resetCameraRef.current = resetCamera;
 
     const setControlMode = (mode: Airport3DControlMode) => {
+      if (cameraFlight) return;
       controlModeRef.current = mode;
       setControlModeState(mode);
+      factoryShellMeshes.forEach((mesh) => {
+        mesh.visible = false;
+      });
       if (mode === "walk") {
         orbitControls.enabled = false;
         if (!walkControls.isLocked) {
@@ -732,7 +790,10 @@ export function useAirport3DInteraction(containerRef: React.RefObject<HTMLDivEle
     setControlModeRef.current = setControlMode;
 
     const loadModel = async () => {
-      if (!AIRPORT_3D_CONFIG.enabled || !AIRPORT_3D_CONFIG.modelUrl.trim()) return;
+      const modelUrl = isFactoryScene
+        ? AIRPORT_3D_CONFIG.interior.modelUrl
+        : AIRPORT_3D_CONFIG.modelUrl;
+      if (!AIRPORT_3D_CONFIG.enabled || !modelUrl.trim()) return;
       setLoading(true);
       setError(null);
       setProgress(0);
@@ -747,7 +808,7 @@ export function useAirport3DInteraction(containerRef: React.RefObject<HTMLDivEle
         }
         const gltf = await new Promise<Awaited<ReturnType<GLTFLoader["loadAsync"]>>>((resolve, reject) => {
           loader.load(
-            AIRPORT_3D_CONFIG.modelUrl,
+            modelUrl,
             resolve,
             (event) => setProgress(event.total ? Math.min(99, Math.round((event.loaded / event.total) * 100)) : Math.min(95, Math.round(event.loaded / 180000))),
             reject,
@@ -769,8 +830,19 @@ export function useAirport3DInteraction(containerRef: React.RefObject<HTMLDivEle
           object.castShadow = true;
           object.receiveShadow = true;
           originalMaterials.set(object, object.material);
+          if (isFactoryScene && object.name.toLowerCase() === "obj33") {
+            factoryShellMeshes.push(object);
+            object.visible = false;
+            object.castShadow = false;
+          }
           const materials = Array.isArray(object.material) ? object.material : [object.material];
-          const searchable = `${object.name} ${object.parent?.name ?? ""} ${materialNames(object.material)}`.toLowerCase();
+          const hierarchyNames: string[] = [];
+          let hierarchyNode: THREE.Object3D | null = object;
+          while (hierarchyNode && hierarchyNames.length < 6) {
+            hierarchyNames.push(hierarchyNode.name);
+            hierarchyNode = hierarchyNode.parent;
+          }
+          const searchable = `${hierarchyNames.join(" ")} ${materialNames(object.material)}`.toLowerCase();
           const isGroundSurface = /(grass|asphalt|runway|taxiway|apron|ground|terrain)/.test(searchable);
           const isSurfaceOverlay = /(light|marking|line|decal|stripe)/.test(searchable);
           const surfaceLayer = isSurfaceOverlay ? 4 : /runway/.test(searchable) ? 3 : /asphalt|taxiway|apron/.test(searchable) ? 2 : isGroundSurface ? 1 : 0;
@@ -795,16 +867,67 @@ export function useAirport3DInteraction(containerRef: React.RefObject<HTMLDivEle
               material.needsUpdate = true;
             }
           });
-          const target = AIRPORT_3D_CONFIG.targets.find((item) =>
-            item.objectPatterns.some((pattern) => searchable.includes(pattern.toLowerCase()))
-            || item.materialPatterns?.some((pattern) => searchable.includes(pattern.toLowerCase())),
-          );
-          if (target) {
-            object.userData.airportTarget = target.id;
-            interactiveMeshes.push(object);
-            targetMeshes.set(target.id, [...(targetMeshes.get(target.id) ?? []), object]);
+          const objectBox = new THREE.Box3().setFromObject(object);
+          const objectSize = objectBox.getSize(new THREE.Vector3());
+          const looksWalkable = objectSize.x > 20
+            && objectSize.z > 20
+            && objectSize.y < Math.max(4, Math.min(objectSize.x, objectSize.z) * 0.08);
+          if (isFactoryScene && looksWalkable && !walkableGroundMeshes.includes(object)) {
+            walkableGroundMeshes.push(object);
+          }
+          if (!isFactoryScene) {
+            const target = AIRPORT_3D_CONFIG.targets.find((item) =>
+              item.objectPatterns.some((pattern) => searchable.includes(pattern.toLowerCase()))
+              || item.materialPatterns?.some((pattern) => searchable.includes(pattern.toLowerCase())),
+            );
+            if (target) {
+              object.userData.airportTarget = target.id;
+              interactiveMeshes.push(object);
+              targetMeshes.set(target.id, [...(targetMeshes.get(target.id) ?? []), object]);
+            }
           }
         });
+
+        if (!isFactoryScene && !(targetMeshes.get(AIRPORT_3D_CONFIG.interior.targetId)?.length)) {
+          const overviewBox = new THREE.Box3().setFromObject(loadedRoot);
+          const overviewSize = overviewBox.getSize(new THREE.Vector3());
+          const overviewCenter = overviewBox.getCenter(new THREE.Vector3());
+          const entry = AIRPORT_3D_CONFIG.interior.entryZone;
+          const entrySize = new THREE.Vector3(
+            overviewSize.x * entry.size[0],
+            overviewSize.y * entry.size[1],
+            overviewSize.z * entry.size[2],
+          );
+          const entryCenter = new THREE.Vector3(
+            overviewCenter.x + overviewSize.x * entry.center[0],
+            overviewBox.min.y + overviewSize.y * entry.center[1],
+            overviewCenter.z + overviewSize.z * entry.center[2],
+          );
+          const entryMaterial = new THREE.MeshStandardMaterial({
+            color: 0x22d3ee,
+            emissive: new THREE.Color(0x0891b2),
+            emissiveIntensity: 0.18,
+            transparent: true,
+            opacity: 0.025,
+            depthWrite: false,
+            roughness: 0.5,
+            metalness: 0.1,
+          });
+          const entryCollider = new THREE.Mesh(
+            new THREE.BoxGeometry(entrySize.x, entrySize.y, entrySize.z),
+            entryMaterial,
+          );
+          entryCollider.name = "Smart_Factory_Interior_Entry";
+          loadedRoot.updateMatrixWorld(true);
+          entryCollider.position.copy(loadedRoot.worldToLocal(entryCenter.clone()));
+          entryCollider.renderOrder = 12;
+          entryCollider.userData.airportTarget = AIRPORT_3D_CONFIG.interior.targetId;
+          entryCollider.userData.airportEntryFallback = true;
+          loadedRoot.add(entryCollider);
+          interactiveMeshes.push(entryCollider);
+          originalMaterials.set(entryCollider, entryMaterial);
+          targetMeshes.set(AIRPORT_3D_CONFIG.interior.targetId, [entryCollider]);
+        }
 
         scene.add(loadedRoot);
         renderer.shadowMap.needsUpdate = true;
@@ -814,41 +937,73 @@ export function useAirport3DInteraction(containerRef: React.RefObject<HTMLDivEle
         const overviewSize = overviewBox.getSize(new THREE.Vector3());
         const overviewCenter = overviewBox.getCenter(new THREE.Vector3());
         walkRayOriginY = overviewBox.max.y + Math.max(overviewSize.y * 2, 10);
-        walkBaseEyeHeight = THREE.MathUtils.clamp(Math.max(overviewSize.y * 0.21, Math.min(overviewSize.x, overviewSize.z) * 0.005), 0.2, 0.38);
+        walkBaseEyeHeight = isFactoryScene
+          ? THREE.MathUtils.clamp(overviewSize.y * 0.13, 12, 16)
+          : THREE.MathUtils.clamp(Math.max(overviewSize.y * 0.21, Math.min(overviewSize.x, overviewSize.z) * 0.005), 0.2, 0.38);
         walkEyeHeight = THREE.MathUtils.clamp(
           walkBaseEyeHeight * (viewSettingsRef.current.cameraHeight / LEGACY_CAMERA_HEIGHT_BASE),
-          0.6,
-          1.8,
+          isFactoryScene ? 8 : 0.6,
+          isFactoryScene ? 18 : 1.8,
         );
         walkGroundY = overviewBox.min.y + 0.012;
         walkBounds = new THREE.Box2(
           new THREE.Vector2(overviewBox.min.x + 0.1, overviewBox.min.z + 0.1),
           new THREE.Vector2(overviewBox.max.x - 0.1, overviewBox.max.z - 0.1),
         );
+        const factoryFocus = new THREE.Vector3(
+          overviewCenter.x,
+          overviewBox.min.y + THREE.MathUtils.clamp(overviewSize.y * 0.08, 4, 10),
+          overviewCenter.z - overviewSize.z * 0.04,
+        );
         walkSpawn = new THREE.Vector3(
-          overviewCenter.x + overviewSize.x * 0.28,
+          overviewCenter.x + overviewSize.x * (isFactoryScene ? 0.06 : 0.28),
           walkGroundY + walkEyeHeight,
-          overviewCenter.z + overviewSize.z * 0.36,
+          overviewCenter.z + overviewSize.z * (isFactoryScene ? 0.18 : 0.36),
         );
         walkGroundY = getWalkGroundHeight(walkSpawn.x, walkSpawn.z, walkGroundY) + 0.018;
         walkSpawn.y = walkGroundY + walkEyeHeight;
         walkLookTarget = new THREE.Vector3(
-          overviewCenter.x,
+          isFactoryScene ? factoryFocus.x : overviewCenter.x,
           walkGroundY + walkEyeHeight,
-          overviewCenter.z,
+          isFactoryScene ? factoryFocus.z : overviewCenter.z,
         );
         radialRing.position.set(overviewCenter.x, overviewBox.min.y - 0.012, overviewCenter.z);
+        radialRing.visible = !isFactoryScene;
         camera.fov = viewSettingsRef.current.fov;
         camera.updateProjectionMatrix();
-        fitObject(loadedRoot, viewSettingsRef.current.distance, true);
+        if (isFactoryScene) {
+          homeTarget = factoryFocus;
+          homePosition = homeTarget.clone().add(new THREE.Vector3(
+            THREE.MathUtils.clamp(overviewSize.x * 0.042, 10, 20),
+            THREE.MathUtils.clamp(overviewSize.y * 0.04, 4, 7),
+            THREE.MathUtils.clamp(overviewSize.z * 0.13, 52, 88),
+          ));
+          camera.near = 0.02;
+          camera.far = Math.max(overviewSize.length() * 8, 5200);
+          camera.position.copy(homePosition);
+          orbitControls.target.copy(homeTarget);
+          orbitControls.minDistance = 1.2;
+          orbitControls.maxDistance = Math.max(overviewSize.length() * 1.8, 900);
+          camera.lookAt(homeTarget);
+          camera.updateProjectionMatrix();
+          orbitControls.update();
+        } else {
+          fitObject(loadedRoot, viewSettingsRef.current.distance, true);
+        }
         setProgress(100);
+        setReady(true);
 
         if (gltf.animations.length) {
           mixer = new THREE.AnimationMixer(loadedRoot);
           gltf.animations.forEach((clip) => mixer?.clipAction(clip).play());
         }
       } catch (loadError) {
-        if (!disposed) setError(loadError instanceof Error ? loadError.message : "Unable to load high-tech park reference model");
+        if (!disposed) {
+          setReady(false);
+          setError(loadError instanceof Error
+            ? loadError.message
+            : `Unable to load ${isFactoryScene ? "factory interior" : "high-tech park reference"} model`);
+        }
       } finally {
         draco?.dispose();
         if (!disposed) setLoading(false);
@@ -896,8 +1051,35 @@ export function useAirport3DInteraction(containerRef: React.RefObject<HTMLDivEle
         const box = new THREE.Box3();
         meshes.forEach((mesh) => box.expandByObject(mesh));
         const size = box.getSize(new THREE.Vector3());
+        const center = box.getCenter(new THREE.Vector3());
+        if (targetId === AIRPORT_3D_CONFIG.interior.targetId) {
+          const approachDirection = camera.position.clone().sub(center);
+          approachDirection.y *= 0.32;
+          if (approachDirection.lengthSq() < 0.001) approachDirection.set(1, 0.25, 1);
+          approachDirection.normalize();
+          const approachDistance = Math.max(size.x, size.z) * 0.34;
+          const endPosition = center.clone().add(approachDirection.multiplyScalar(approachDistance));
+          endPosition.y = Math.max(
+            endPosition.y,
+            box.min.y + Math.max(size.y * 0.62, 1.4),
+          );
+          const endTarget = center.clone();
+          endTarget.y = box.min.y + size.y * 0.42;
+          restoreHighlight();
+          setTransitioning(true);
+          renderer.domElement.style.cursor = "progress";
+          startCameraFlight(
+            endPosition,
+            endTarget,
+            AIRPORT_3D_CONFIG.interior.transitionDurationMs / 1000,
+            () => {
+              if (!disposed) optionsRef.current.onEnterFactory();
+            },
+          );
+          return;
+        }
         const proxy = new THREE.Mesh(new THREE.BoxGeometry(size.x, size.y, size.z));
-        proxy.position.copy(box.getCenter(new THREE.Vector3()));
+        proxy.position.copy(center);
         fitObject(proxy, target?.cameraPadding ?? 1.25, false);
         proxy.geometry.dispose();
       }
@@ -961,8 +1143,24 @@ export function useAirport3DInteraction(containerRef: React.RefObject<HTMLDivEle
     const animate = () => {
       const delta = clock.getDelta();
       mixer?.update(delta);
-      if (controlModeRef.current === "walk") {
-        const speed = movement.boost ? 2.25 : 1.3;
+      if (cameraFlight) {
+        cameraFlight.elapsed += delta;
+        const linear = THREE.MathUtils.clamp(cameraFlight.elapsed / cameraFlight.duration, 0, 1);
+        const eased = linear < 0.5
+          ? 4 * linear * linear * linear
+          : 1 - Math.pow(-2 * linear + 2, 3) / 2;
+        camera.position.lerpVectors(cameraFlight.startPosition, cameraFlight.endPosition, eased);
+        orbitControls.target.lerpVectors(cameraFlight.startTarget, cameraFlight.endTarget, eased);
+        camera.lookAt(orbitControls.target);
+        if (linear >= 1) {
+          const completedFlight = cameraFlight;
+          cameraFlight = null;
+          completedFlight.onComplete?.();
+        }
+      } else if (controlModeRef.current === "walk") {
+        const speed = movement.boost
+          ? (isFactoryScene ? 20 : 2.25)
+          : (isFactoryScene ? 11 : 1.3);
         if (movement.forward) walkControls.moveForward(speed * delta);
         if (movement.backward) walkControls.moveForward(-speed * delta);
         if (movement.left) walkControls.moveRight(-speed * delta);
@@ -972,6 +1170,7 @@ export function useAirport3DInteraction(containerRef: React.RefObject<HTMLDivEle
         walkGroundY = getWalkGroundHeight(camera.position.x, camera.position.z, walkGroundY - 0.018) + 0.018;
         camera.position.y = walkGroundY + walkEyeHeight;
       } else {
+        orbitControls.enabled = true;
         orbitControls.update();
       }
       updateCameraClipPlanes();
@@ -1028,12 +1227,15 @@ export function useAirport3DInteraction(containerRef: React.RefObject<HTMLDivEle
       renderer.forceContextLoss();
       if (renderer.domElement.parentElement === container) container.removeChild(renderer.domElement);
     };
-  }, [containerRef]);
+  }, [containerRef, options.sceneMode]);
 
   return {
     loading,
     progress,
     error,
+    ready,
+    transitioning,
+    sceneMode: options.sceneMode,
     selectedTarget,
     resetCamera: () => resetCameraRef.current(),
     controlMode,

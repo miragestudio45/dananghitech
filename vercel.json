@@ -1,6 +1,14 @@
 {
   "rewrites": [
     {
+      "source": "/models/park-overview.glb",
+      "destination": "https://pub-ad3c98c8c26c4e95ad475279f7257940.r2.dev/ff_opt.glb"
+    },
+    {
+      "source": "/models/factory-interior.glb",
+      "destination": "https://pub-ad3c98c8c26c4e95ad475279f7257940.r2.dev/cheese_optimize.glb"
+    },
+    {
       "source": "/site/:path*",
       "destination": "/index.html"
     }

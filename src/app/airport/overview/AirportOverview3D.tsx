@@ -1,17 +1,22 @@
-import React, { useMemo, useRef, useState } from "react";
-import { Box, Camera, RotateCcw, SunMedium, Undo2, X } from "lucide-react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { ArrowLeft, Box, Camera, Factory, RotateCcw, SunMedium, Undo2, X } from "lucide-react";
 import { AIRPORT_3D_CONFIG } from "./airport3DConfig";
-import { useAirport3DInteraction } from "./useAirport3DInteraction";
+import { type Airport3DSceneMode, useAirport3DInteraction } from "./useAirport3DInteraction";
 import { useAirportLanguage } from "../i18n/AirportLanguage";
 
 export function AirportOverview3D({ onBack2D }: { onBack2D: () => void }) {
   const { tr } = useAirportLanguage();
   const containerRef = useRef<HTMLDivElement>(null);
+  const returnTimerRef = useRef<number | null>(null);
+  const [sceneMode, setSceneMode] = useState<Airport3DSceneMode>("overview");
+  const [manualTransition, setManualTransition] = useState<"exiting" | "returning" | null>(null);
   const [settingsPanel, setSettingsPanel] = useState<"camera" | "lighting" | null>(null);
   const {
     loading,
     progress,
     error,
+    ready,
+    transitioning,
     selectedTarget,
     resetCamera,
     controlMode,
@@ -21,13 +26,43 @@ export function AirportOverview3D({ onBack2D }: { onBack2D: () => void }) {
     viewSettings,
     setViewSettings,
     resetViewSettings,
-  } = useAirport3DInteraction(containerRef);
+  } = useAirport3DInteraction(containerRef, {
+    sceneMode,
+    onEnterFactory: () => setSceneMode("factory"),
+  });
   const targetLabel = AIRPORT_3D_CONFIG.targets.find((item) => item.id === selectedTarget)?.label ?? selectedTarget;
   const compassDirection = useMemo(() => {
     const labels = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
     return labels[Math.round(((heading % 360) / 45)) % labels.length];
   }, [heading]);
 
+  useEffect(() => {
+    if (manualTransition === "returning" && sceneMode === "overview" && ready) {
+      setManualTransition(null);
+    }
+  }, [manualTransition, ready, sceneMode]);
+
+  useEffect(() => () => {
+    if (returnTimerRef.current !== null) window.clearTimeout(returnTimerRef.current);
+  }, []);
+
+  const backToOverview = () => {
+    if (sceneMode !== "factory" || manualTransition) return;
+    setSettingsPanel(null);
+    setManualTransition("exiting");
+    returnTimerRef.current = window.setTimeout(() => {
+      setSceneMode("overview");
+      setManualTransition("returning");
+      returnTimerRef.current = null;
+    }, 420);
+  };
+
+  const transitionVisible = transitioning || manualTransition !== null || (sceneMode === "factory" && loading);
+  const transitionTitle = manualTransition
+    ? "Đang quay lại toàn cảnh"
+    : sceneMode === "factory"
+      ? "Đang mở không gian nhà máy"
+      : "Đang tiến vào nhà máy";
 
   return (
     <div className="relative h-full min-h-0 overflow-hidden bg-[#020a14]">
@@ -35,8 +70,19 @@ export function AirportOverview3D({ onBack2D }: { onBack2D: () => void }) {
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_45%,rgba(1,5,12,.54)_100%)]" />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-[#020a14]/50 to-transparent" />
 
+      <div className="absolute left-3 top-3 z-40 flex h-9 items-center gap-2 rounded-xl border border-cyan-400/25 bg-[#06111f]/88 px-3 text-[12px] font-semibold text-cyan-100 shadow-xl backdrop-blur-xl">
+        <Factory size={15} className="text-cyan-300" />
+        {sceneMode === "factory" ? AIRPORT_3D_CONFIG.interior.label : "High-Tech Park Overview"}
+      </div>
+
       <div className="absolute left-3 top-14 z-40 flex flex-col gap-2">
-        <button onClick={onBack2D} className="airport-button bg-[#06111f]/82 backdrop-blur-xl"><Undo2 size={14} /> {tr("Back to 2D")}</button>
+        {sceneMode === "factory" ? (
+          <button onClick={backToOverview} disabled={Boolean(manualTransition)} className="airport-button bg-[#06111f]/88 backdrop-blur-xl disabled:cursor-wait disabled:opacity-60">
+            <ArrowLeft size={14} /> Back to Overview 3D
+          </button>
+        ) : (
+          <button onClick={onBack2D} className="airport-button bg-[#06111f]/82 backdrop-blur-xl"><Undo2 size={14} /> {tr("Back to 2D")}</button>
+        )}
         <div className="flex overflow-hidden rounded-xl border border-white/10 bg-[#06111f]/82 p-1 shadow-xl backdrop-blur-xl">
           <button
             onClick={() => setControlMode("orbit")}
@@ -125,21 +171,54 @@ export function AirportOverview3D({ onBack2D }: { onBack2D: () => void }) {
         </div>
       </div>
 
+      {sceneMode === "overview" && ready && !transitioning && (
+        <div className="pointer-events-none absolute bottom-24 right-5 z-30 max-w-[310px] rounded-xl border border-cyan-400/25 bg-[#071426]/88 p-4 text-white shadow-2xl backdrop-blur-xl">
+          <div className="flex items-center gap-2 text-cyan-200">
+            <Factory size={15} />
+            <p className="text-[11px] font-bold uppercase tracking-[.15em]">Factory tour available</p>
+          </div>
+          <p className="mt-2 text-[13px] leading-relaxed text-slate-300">
+            Di chuột và click vào nhà máy phía trước để đi vào không gian bên trong.
+          </p>
+        </div>
+      )}
+
       {controlMode === "walk" && (
         <div className="absolute bottom-24 left-5 z-40 w-[340px] rounded-xl border border-cyan-400/20 bg-[#071426]/86 p-4 text-xs text-white shadow-2xl backdrop-blur-xl">
           <p className="text-[11px] uppercase tracking-[.16em] text-cyan-300">Walk mode</p>
           <p className="mt-2 text-[13px] leading-relaxed text-slate-300">
             {walkLocked
               ? "Walk FPS: W/A/S/D để di chuyển trên mặt sàn · giữ Shift để đi nhanh hơn · ESC để thoát chế độ nhìn chuột."
-              : "Nhấn vào không gian 3D để bắt đầu Walk mode kiểu first-person. Camera sẽ bám mặt sàn, đi chậm và dễ điều khiển hơn."}
+              : sceneMode === "factory"
+                ? "Nhấn vào bên trong nhà máy để bắt đầu Walk mode. Dùng W/A/S/D để khám phá dây chuyền và không gian nội thất."
+                : "Nhấn vào không gian 3D để bắt đầu Walk mode kiểu first-person. Camera sẽ bám mặt sàn, đi chậm và dễ điều khiển hơn."}
           </p>
         </div>
       )}
 
-      {loading && <div className="absolute bottom-24 left-1/2 w-72 -translate-x-1/2 rounded-xl border border-white/10 bg-[#071426]/92 p-3 shadow-2xl backdrop-blur-xl"><div className="flex justify-between text-[12px] text-slate-300"><span>{tr("Loading high-tech park reference model")}</span><b>{progress}%</b></div><div className="mt-2 h-1 overflow-hidden rounded bg-white/10"><div className="h-full bg-cyan-300 transition-[width]" style={{ width: `${progress}%` }} /></div></div>}
+      {transitionVisible && (
+        <div className={`pointer-events-none absolute inset-0 z-30 grid place-items-center transition-colors duration-500 ${manualTransition === "exiting" ? "bg-[#020a14]" : "bg-[#020a14]/55"}`}>
+          <div className="w-[min(88vw,360px)] rounded-2xl border border-cyan-300/25 bg-[#06111f]/88 p-5 text-center text-white shadow-[0_24px_80px_rgba(0,0,0,.55)] backdrop-blur-2xl">
+            <div className="mx-auto grid h-11 w-11 place-items-center rounded-2xl border border-cyan-300/25 bg-cyan-300/10 text-cyan-200">
+              <Factory size={21} className="animate-pulse" />
+            </div>
+            <p className="mt-3 text-[14px] font-semibold">{transitionTitle}</p>
+            <p className="mt-1 text-[12px] text-slate-300">
+              {sceneMode === "factory" && loading ? `Đang tải mô hình nội thất · ${progress}%` : "Đang chuyển camera và chuẩn bị không gian 3D"}
+            </p>
+            <div className="mt-4 h-1 overflow-hidden rounded-full bg-white/10">
+              <div className={`h-full bg-cyan-300 transition-all duration-500 ${loading ? "" : "w-full animate-pulse"}`} style={loading ? { width: `${Math.max(8, progress)}%` } : undefined} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {loading && !transitionVisible && <div className="absolute bottom-24 left-1/2 w-72 -translate-x-1/2 rounded-xl border border-white/10 bg-[#071426]/92 p-3 shadow-2xl backdrop-blur-xl"><div className="flex justify-between text-[12px] text-slate-300"><span>{tr("Loading high-tech park reference model")}</span><b>{progress}%</b></div><div className="mt-2 h-1 overflow-hidden rounded bg-white/10"><div className="h-full bg-cyan-300 transition-[width]" style={{ width: `${progress}%` }} /></div></div>}
       {error && <div className="absolute bottom-24 left-1/2 -translate-x-1/2 rounded-xl border border-red-400/25 bg-red-400/10 px-4 py-3 text-xs text-red-200">{tr("3D model error")}: {error}</div>}
       {selectedTarget && <div className="absolute bottom-24 right-5 rounded-xl border border-cyan-400/20 bg-[#071426]/92 p-4 text-xs text-white shadow-2xl backdrop-blur-xl"><p className="text-[11px] uppercase tracking-wider text-cyan-300">{tr("Selected 3D context")}</p><b className="mt-1 block text-sm text-white">{tr(targetLabel ?? "")}</b><p className="mt-1 text-[11px] text-slate-500">{tr("Click Reset camera to return to the high-tech park overview.")}</p></div>}
-      <div className="absolute bottom-4 left-4 text-[11px] uppercase tracking-[.16em] text-slate-500">{tr("Three.js night spatial scene · demonstration mode")}</div>
+      <div className="absolute bottom-4 left-4 text-[11px] uppercase tracking-[.16em] text-slate-400">
+        {sceneMode === "factory" ? "SMART FACTORY INTERIOR · ORBIT / WALK" : tr("Three.js night spatial scene · demonstration mode")}
+      </div>
     </div>
   );
 }

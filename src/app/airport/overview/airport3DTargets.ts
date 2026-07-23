@@ -9,6 +9,13 @@ export interface Airport3DTarget {
 
 export const AIRPORT_3D_TARGETS: Airport3DTarget[] = [
   {
+    id: "factory-interior-entry",
+    label: "Smart Factory Interior",
+    objectPatterns: ["room"],
+    module: "ASSETS_FM",
+    cameraPadding: 1.12,
+  },
+  {
     id: "high-tech-buildings",
     label: "High-Tech Manufacturing Buildings",
     objectPatterns: ["building", "factory", "warehouse", "workshop", "mesh"],

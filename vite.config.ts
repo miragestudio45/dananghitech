@@ -5,6 +5,19 @@ import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 
 const projectRoot = fileURLToPath(new URL('.', import.meta.url))
+const factoryModelTarget = 'https://pub-ad3c98c8c26c4e95ad475279f7257940.r2.dev'
+const modelProxy = {
+  '/models/park-overview.glb': {
+    target: factoryModelTarget,
+    changeOrigin: true,
+    rewrite: () => '/ff_opt.glb',
+  },
+  '/models/factory-interior.glb': {
+    target: factoryModelTarget,
+    changeOrigin: true,
+    rewrite: () => '/cheese_optimize.glb',
+  },
+}
 
 function figmaAssetResolver() {
   return {
@@ -31,6 +44,12 @@ export default defineConfig({
       // Alias @ to the src directory
       '@': path.resolve(projectRoot, './src'),
     },
+  },
+  server: {
+    proxy: modelProxy,
+  },
+  preview: {
+    proxy: modelProxy,
   },
 
   // File types to support raw imports. Never add .css, .tsx, or .ts files to this.
