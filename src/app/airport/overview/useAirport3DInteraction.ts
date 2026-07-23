@@ -29,6 +29,11 @@ const VIEW_SETTINGS_STORAGE_KEY = "danang-htp-3d-view-settings-v2";
 const LEGACY_CAMERA_HEIGHT_BASE = 0.34;
 
 const DEFAULT_WALK_EYE_HEIGHT = 0.22;
+const WALK_SPEED = {
+  overview: { normal: 3.1, boost: 5.8, click: 3.8 },
+  factory: { normal: 46, boost: 82, click: 54 },
+} as const;
+const WALK_DRAG_LOOK_SENSITIVITY = 0.0032;
 
 function seededRandom(seed: number) {
   let value = seed >>> 0;
@@ -331,7 +336,6 @@ export function useAirport3DInteraction(
   const [transitioning, setTransitioning] = useState(false);
   const [selectedTarget, setSelectedTarget] = useState<string | null>(null);
   const [controlMode, setControlModeState] = useState<Airport3DControlMode>("orbit");
-  const [walkLocked, setWalkLocked] = useState(false);
   const [heading, setHeading] = useState(0);
   const [viewSettings, setViewSettingsState] = useState<Airport3DViewSettings>(() => {
     if (typeof window === "undefined") return DEFAULT_AIRPORT_3D_VIEW_SETTINGS;
@@ -422,9 +426,34 @@ export function useAirport3DInteraction(
       right: false,
       boost: false,
     };
-
-    walkControls.addEventListener("lock", () => setWalkLocked(true));
-    walkControls.addEventListener("unlock", () => setWalkLocked(false));
+    const resetMovement = () => {
+      movement.forward = false;
+      movement.backward = false;
+      movement.left = false;
+      movement.right = false;
+      movement.boost = false;
+    };
+    let clickMoveTarget: THREE.Vector3 | null = null;
+    let clickMarkerHideAt: number | null = null;
+    let clickMarkerBaseScale = isFactoryScene ? 2.4 : 0.18;
+    const clickMoveMarker = new THREE.Mesh(
+      new THREE.RingGeometry(0.62, 1, 40),
+      new THREE.MeshBasicMaterial({
+        color: 0x67e8f9,
+        transparent: true,
+        opacity: 0.82,
+        depthWrite: false,
+        depthTest: true,
+        polygonOffset: true,
+        polygonOffsetFactor: -4,
+        polygonOffsetUnits: -4,
+        side: THREE.DoubleSide,
+      }),
+    );
+    clickMoveMarker.rotation.x = -Math.PI / 2;
+    clickMoveMarker.renderOrder = 30;
+    clickMoveMarker.visible = false;
+    scene.add(clickMoveMarker);
 
     const pmrem = new THREE.PMREMGenerator(renderer);
     const environmentRenderTarget = pmrem.fromScene(new RoomEnvironment(), 0.04);
@@ -523,7 +552,16 @@ export function useAirport3DInteraction(
     const originalMaterials = new Map<THREE.Mesh, THREE.Material | THREE.Material[]>();
     const highlightMaterials = new Map<THREE.Mesh, THREE.Material | THREE.Material[]>();
     let hoveredTarget: string | null = null;
-    let pointerDown: { x: number; y: number } | null = null;
+    let pointerDown: {
+      x: number;
+      y: number;
+      lastX: number;
+      lastY: number;
+      button: number;
+      pointerId: number;
+      dragging: boolean;
+    } | null = null;
+    const walkLookEuler = new THREE.Euler(0, 0, 0, "YXZ");
     let cameraFlight: {
       elapsed: number;
       duration: number;
@@ -540,7 +578,6 @@ export function useAirport3DInteraction(
       duration: number,
       onComplete?: () => void,
     ) => {
-      if (walkControls.isLocked) walkControls.unlock();
       controlModeRef.current = "orbit";
       setControlModeState("orbit");
       orbitControls.enabled = false;
@@ -745,6 +782,10 @@ export function useAirport3DInteraction(
 
     const resetCamera = () => {
       cameraFlight = null;
+      clickMoveTarget = null;
+      clickMarkerHideAt = null;
+      clickMoveMarker.visible = false;
+      resetMovement();
       setTransitioning(false);
       camera.position.copy(homePosition);
       orbitControls.target.copy(homeTarget);
@@ -752,9 +793,6 @@ export function useAirport3DInteraction(
       orbitControls.update();
       restoreHighlight();
       setSelectedTarget(null);
-      if (controlModeRef.current === "walk" && walkControls.isLocked) {
-        walkControls.unlock();
-      }
     };
     resetCameraRef.current = resetCamera;
 
@@ -767,16 +805,21 @@ export function useAirport3DInteraction(
       });
       if (mode === "walk") {
         orbitControls.enabled = false;
-        if (!walkControls.isLocked) {
-          camera.position.copy(walkSpawn);
-          camera.position.y = walkGroundY + walkEyeHeight;
-          camera.lookAt(walkLookTarget);
-          updateCameraClipPlanes();
-          updateHeading();
-        }
-        renderer.domElement.style.cursor = walkControls.isLocked ? "crosshair" : "pointer";
+        clickMoveTarget = null;
+        clickMarkerHideAt = null;
+        clickMoveMarker.visible = false;
+        resetMovement();
+        camera.position.copy(walkSpawn);
+        camera.position.y = walkGroundY + walkEyeHeight;
+        camera.lookAt(walkLookTarget);
+        updateCameraClipPlanes();
+        updateHeading();
+        renderer.domElement.style.cursor = "crosshair";
       } else {
-        if (walkControls.isLocked) walkControls.unlock();
+        clickMoveTarget = null;
+        clickMarkerHideAt = null;
+        clickMoveMarker.visible = false;
+        resetMovement();
         orbitControls.enabled = true;
         camera.position.copy(homePosition);
         orbitControls.target.copy(homeTarget);
@@ -784,7 +827,7 @@ export function useAirport3DInteraction(
         orbitControls.update();
         updateCameraClipPlanes();
         updateHeading();
-        renderer.domElement.style.cursor = "grab";
+        renderer.domElement.style.cursor = "crosshair";
       }
     };
     setControlModeRef.current = setControlMode;
@@ -967,6 +1010,11 @@ export function useAirport3DInteraction(
           walkGroundY + walkEyeHeight,
           isFactoryScene ? factoryFocus.z : overviewCenter.z,
         );
+        clickMarkerBaseScale = isFactoryScene
+          ? THREE.MathUtils.clamp(Math.min(overviewSize.x, overviewSize.z) * 0.012, 1.8, 4.5)
+          : THREE.MathUtils.clamp(Math.min(overviewSize.x, overviewSize.z) * 0.003, 0.12, 0.24);
+        clickMoveMarker.scale.setScalar(clickMarkerBaseScale);
+        clickMoveMarker.userData.lastPulse = 1;
         radialRing.position.set(overviewCenter.x, overviewBox.min.y - 0.012, overviewCenter.z);
         radialRing.visible = !isFactoryScene;
         camera.fov = viewSettingsRef.current.fov;
@@ -1024,9 +1072,66 @@ export function useAirport3DInteraction(
       return hit?.userData.airportTarget as string | undefined;
     };
 
+    const raycastWalkDestination = (event: PointerEvent) => {
+      updatePointer(event);
+      raycaster.setFromCamera(pointer, camera);
+      const groundHit = walkableGroundMeshes.length
+        ? raycaster.intersectObjects(walkableGroundMeshes, false)[0]
+        : undefined;
+      const horizontalSurfaceHit = !groundHit && loadedRoot
+        ? raycaster.intersectObject(loadedRoot, true).find((hit) => {
+          if (!(hit.object instanceof THREE.Mesh) || !hit.face || hit.object.userData.airportEntryFallback) return false;
+          let visibleNode: THREE.Object3D | null = hit.object;
+          while (visibleNode) {
+            if (!visibleNode.visible) return false;
+            visibleNode = visibleNode.parent;
+          }
+          const worldNormal = hit.face.normal.clone().applyNormalMatrix(
+            new THREE.Matrix3().getNormalMatrix(hit.object.matrixWorld),
+          );
+          const isHorizontal = worldNormal.y > 0.58;
+          const isBelowWalkingView = hit.point.y <= camera.position.y + walkEyeHeight * 0.12;
+          return isHorizontal && isBelowWalkingView;
+        })
+        : undefined;
+      const surfaceHit = groundHit ?? horizontalSurfaceHit;
+      const destination = surfaceHit?.point.clone() ?? raycaster.ray.intersectPlane(
+        new THREE.Plane(new THREE.Vector3(0, 1, 0), -walkGroundY),
+        new THREE.Vector3(),
+      );
+      if (!destination) return null;
+      destination.x = THREE.MathUtils.clamp(destination.x, walkBounds.min.x, walkBounds.max.x);
+      destination.z = THREE.MathUtils.clamp(destination.z, walkBounds.min.y, walkBounds.max.y);
+      if (!surfaceHit) {
+        destination.y = getWalkGroundHeight(destination.x, destination.z, walkGroundY - 0.018) + 0.018;
+      }
+      return destination;
+    };
+
     const onMove = (event: PointerEvent) => {
       if (controlModeRef.current === "walk") {
-        renderer.domElement.style.cursor = walkControls.isLocked ? "crosshair" : "pointer";
+        if (pointerDown?.button === 0 && (event.buttons & 1) === 1) {
+          const deltaX = event.clientX - pointerDown.lastX;
+          const deltaY = event.clientY - pointerDown.lastY;
+          const dragDistance = Math.hypot(event.clientX - pointerDown.x, event.clientY - pointerDown.y);
+          if (pointerDown.dragging || dragDistance > 4) {
+            pointerDown.dragging = true;
+            walkLookEuler.setFromQuaternion(camera.quaternion);
+            walkLookEuler.y -= deltaX * WALK_DRAG_LOOK_SENSITIVITY;
+            walkLookEuler.x -= deltaY * WALK_DRAG_LOOK_SENSITIVITY;
+            walkLookEuler.x = THREE.MathUtils.clamp(
+              walkLookEuler.x,
+              -Math.PI / 2 + 0.08,
+              Math.PI / 2 - 0.08,
+            );
+            camera.quaternion.setFromEuler(walkLookEuler);
+          renderer.domElement.style.cursor = "grabbing";
+          }
+          pointerDown.lastX = event.clientX;
+          pointerDown.lastY = event.clientY;
+        } else {
+          renderer.domElement.style.cursor = "crosshair";
+        }
         return;
       }
       const targetId = interactiveMeshes.length ? raycastTarget(event) : undefined;
@@ -1034,14 +1139,47 @@ export function useAirport3DInteraction(
       renderer.domElement.style.cursor = targetId ? "pointer" : "grab";
     };
 
-    const onPointerDown = (event: PointerEvent) => { pointerDown = { x: event.clientX, y: event.clientY }; };
+    const onPointerDown = (event: PointerEvent) => {
+      pointerDown = {
+        x: event.clientX,
+        y: event.clientY,
+        lastX: event.clientX,
+        lastY: event.clientY,
+        button: event.button,
+        pointerId: event.pointerId,
+        dragging: false,
+      };
+      if (controlModeRef.current === "walk" && event.button === 0) {
+        renderer.domElement.setPointerCapture?.(event.pointerId);
+        renderer.domElement.style.cursor = "grabbing";
+      }
+    };
     const onPointerUp = (event: PointerEvent) => {
-      if (controlModeRef.current === "walk") return;
-      if (!pointerDown || Math.hypot(event.clientX - pointerDown.x, event.clientY - pointerDown.y) > 6) {
-        pointerDown = null;
+      const completedPointer = pointerDown;
+      pointerDown = null;
+      if (renderer.domElement.hasPointerCapture?.(event.pointerId)) {
+        renderer.domElement.releasePointerCapture(event.pointerId);
+      }
+      if (controlModeRef.current === "walk") renderer.domElement.style.cursor = "crosshair";
+      if (!completedPointer || completedPointer.dragging || Math.hypot(event.clientX - completedPointer.x, event.clientY - completedPointer.y) > 6) {
         return;
       }
-      pointerDown = null;
+      const isPrimaryClick = completedPointer.button === 0 && event.button === 0;
+      if (!isPrimaryClick) return;
+      if (controlModeRef.current === "walk") {
+        const destination = raycastWalkDestination(event);
+        if (!destination) return;
+        resetMovement();
+        clickMoveTarget = destination;
+        clickMarkerHideAt = null;
+        clickMoveMarker.position.copy(destination);
+        clickMoveMarker.position.y += Math.max(
+          isFactoryScene ? 0.06 : 0.012,
+          clickMarkerBaseScale * 0.025,
+        );
+        clickMoveMarker.visible = true;
+        return;
+      }
       const targetId = interactiveMeshes.length ? raycastTarget(event) : undefined;
       if (!targetId) return;
       setSelectedTarget(targetId);
@@ -1085,13 +1223,11 @@ export function useAirport3DInteraction(
       }
     };
 
-    const onCanvasClick = () => {
-      if (controlModeRef.current === "walk" && !walkControls.isLocked) {
-        walkControls.lock();
-      }
-    };
-
     const onKeyChange = (pressed: boolean, code: string) => {
+      if (pressed && ["KeyW", "KeyA", "KeyS", "KeyD"].includes(code)) {
+        clickMoveTarget = null;
+        clickMoveMarker.visible = false;
+      }
       switch (code) {
         case "KeyW": movement.forward = pressed; break;
         case "KeyS": movement.backward = pressed; break;
@@ -1109,24 +1245,21 @@ export function useAirport3DInteraction(
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (controlModeRef.current !== "walk") return;
-      if (event.code === "Escape" && walkControls.isLocked) {
-        walkControls.unlock();
-        return;
-      }
       onKeyChange(true, event.code);
     };
     const onKeyUp = (event: KeyboardEvent) => {
       if (controlModeRef.current !== "walk") return;
       onKeyChange(false, event.code);
     };
+    const onWindowBlur = () => resetMovement();
 
     renderer.domElement.addEventListener("pointermove", onMove);
     renderer.domElement.addEventListener("pointerdown", onPointerDown);
     renderer.domElement.addEventListener("pointerup", onPointerUp);
     renderer.domElement.addEventListener("pointerleave", restoreHighlight);
-    renderer.domElement.addEventListener("click", onCanvasClick);
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("keyup", onKeyUp);
+    window.addEventListener("blur", onWindowBlur);
 
     const resize = () => {
       const width = Math.max(1, container.clientWidth);
@@ -1158,13 +1291,40 @@ export function useAirport3DInteraction(
           completedFlight.onComplete?.();
         }
       } else if (controlModeRef.current === "walk") {
-        const speed = movement.boost
-          ? (isFactoryScene ? 20 : 2.25)
-          : (isFactoryScene ? 11 : 1.3);
+        const speedConfig = isFactoryScene ? WALK_SPEED.factory : WALK_SPEED.overview;
+        const speed = movement.boost ? speedConfig.boost : speedConfig.normal;
         if (movement.forward) walkControls.moveForward(speed * delta);
         if (movement.backward) walkControls.moveForward(-speed * delta);
         if (movement.left) walkControls.moveRight(-speed * delta);
         if (movement.right) walkControls.moveRight(speed * delta);
+        if (clickMoveTarget && !movement.forward && !movement.backward && !movement.left && !movement.right) {
+          const clickDirection = clickMoveTarget.clone().sub(camera.position);
+          clickDirection.y = 0;
+          const distance = clickDirection.length();
+          const stopDistance = isFactoryScene ? 1.2 : 0.08;
+          if (distance <= stopDistance) {
+            clickMoveTarget = null;
+            clickMarkerHideAt = clock.elapsedTime + 0.9;
+          } else {
+            camera.position.addScaledVector(
+              clickDirection.normalize(),
+              Math.min(distance - stopDistance, speedConfig.click * delta),
+            );
+          }
+        }
+        if (clickMoveMarker.visible) {
+          const pulse = 1 + Math.sin(clock.elapsedTime * 6) * 0.1;
+          const markerMaterial = clickMoveMarker.material as THREE.MeshBasicMaterial;
+          markerMaterial.opacity = 0.62 + Math.sin(clock.elapsedTime * 6) * 0.2;
+          clickMoveMarker.scale.multiplyScalar(pulse / (clickMoveMarker.userData.lastPulse ?? 1));
+          clickMoveMarker.userData.lastPulse = pulse;
+        }
+        if (clickMarkerHideAt !== null && clock.elapsedTime >= clickMarkerHideAt) {
+          clickMarkerHideAt = null;
+          clickMoveMarker.visible = false;
+          clickMoveMarker.scale.multiplyScalar(1 / (clickMoveMarker.userData.lastPulse ?? 1));
+          clickMoveMarker.userData.lastPulse = 1;
+        }
         camera.position.x = THREE.MathUtils.clamp(camera.position.x, walkBounds.min.x, walkBounds.max.x);
         camera.position.z = THREE.MathUtils.clamp(camera.position.z, walkBounds.min.y, walkBounds.max.y);
         walkGroundY = getWalkGroundHeight(camera.position.x, camera.position.z, walkGroundY - 0.018) + 0.018;
@@ -1198,10 +1358,9 @@ export function useAirport3DInteraction(
       renderer.domElement.removeEventListener("pointerdown", onPointerDown);
       renderer.domElement.removeEventListener("pointerup", onPointerUp);
       renderer.domElement.removeEventListener("pointerleave", restoreHighlight);
-      renderer.domElement.removeEventListener("click", onCanvasClick);
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
-      if (walkControls.isLocked) walkControls.unlock();
+      window.removeEventListener("blur", onWindowBlur);
       orbitControls.dispose();
       walkControls.disconnect();
       restoreHighlight();
@@ -1240,7 +1399,6 @@ export function useAirport3DInteraction(
     resetCamera: () => resetCameraRef.current(),
     controlMode,
     setControlMode: (mode: Airport3DControlMode) => setControlModeRef.current(mode),
-    walkLocked,
     heading,
     viewSettings,
     setViewSettings: (patch: Partial<Airport3DViewSettings>) => {

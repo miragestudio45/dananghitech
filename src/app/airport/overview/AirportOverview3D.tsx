@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Box, Camera, Factory, RotateCcw, SunMedium, Undo2, X } from "lucide-react";
+import { ArrowLeft, Box, Camera, Factory, MousePointer2, RotateCcw, SunMedium, Undo2, X } from "lucide-react";
 import { AIRPORT_3D_CONFIG } from "./airport3DConfig";
 import { type Airport3DSceneMode, useAirport3DInteraction } from "./useAirport3DInteraction";
 import { useAirportLanguage } from "../i18n/AirportLanguage";
@@ -21,7 +21,6 @@ export function AirportOverview3D({ onBack2D }: { onBack2D: () => void }) {
     resetCamera,
     controlMode,
     setControlMode,
-    walkLocked,
     heading,
     viewSettings,
     setViewSettings,
@@ -185,14 +184,17 @@ export function AirportOverview3D({ onBack2D }: { onBack2D: () => void }) {
 
       {controlMode === "walk" && (
         <div className="absolute bottom-24 left-5 z-40 w-[340px] rounded-xl border border-cyan-400/20 bg-[#071426]/86 p-4 text-xs text-white shadow-2xl backdrop-blur-xl">
-          <p className="text-[11px] uppercase tracking-[.16em] text-cyan-300">Walk mode</p>
+          <div className="flex items-center gap-2">
+            <MousePointer2 size={14} className="text-cyan-300" />
+            <p className="text-[11px] uppercase tracking-[.16em] text-cyan-300">Walk mode</p>
+          </div>
           <p className="mt-2 text-[13px] leading-relaxed text-slate-300">
-            {walkLocked
-              ? "Walk FPS: W/A/S/D để di chuyển trên mặt sàn · giữ Shift để đi nhanh hơn · ESC để thoát chế độ nhìn chuột."
-              : sceneMode === "factory"
-                ? "Nhấn vào bên trong nhà máy để bắt đầu Walk mode. Dùng W/A/S/D để khám phá dây chuyền và không gian nội thất."
-                : "Nhấn vào không gian 3D để bắt đầu Walk mode kiểu first-person. Camera sẽ bám mặt sàn, đi chậm và dễ điều khiển hơn."}
+            Click nhanh xuống mặt sàn để đi tới điểm đó. Giữ chuột trái và kéo để xoay góc nhìn; W/A/S/D luôn di chuyển theo hướng camera.
           </p>
+          <div className="mt-3 grid grid-cols-2 gap-2 text-[10px]">
+            <div className="rounded-lg border border-cyan-300/12 bg-cyan-300/[.045] px-2.5 py-2 text-cyan-100">Click: đi tới điểm chọn</div>
+            <div className="rounded-lg border border-cyan-300/12 bg-cyan-300/[.045] px-2.5 py-2 text-cyan-100">Giữ + kéo: xoay hướng</div>
+          </div>
         </div>
       )}
 
