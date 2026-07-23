@@ -228,7 +228,7 @@ export function BimModelViewer({ modelUrl, label }: BimModelViewerProps) {
   }, [modelUrl]);
 
   if (!modelUrl) {
-    return <div className="absolute inset-0 grid place-items-center p-6"><div className="max-w-xl rounded-2xl border border-white/[.08] bg-[#04111f]/82 p-8 text-center"><Box size={52} className="mx-auto text-cyan-300/60" /><h3 className="mt-4 text-sm font-semibold text-white">{label}</h3><p className="mt-2 text-[11px] leading-relaxed text-slate-500">No model has been assigned to this BIM-GIS node yet. The viewer, data structure and interaction shell are ready for the high-tech park model package.</p></div></div>;
+    return <div className="absolute inset-0 grid place-items-center p-6"><div className="max-w-xl rounded-2xl border border-white/[.08] bg-[#04111f]/82 p-8 text-center"><Box size={52} className="mx-auto text-cyan-300/60" /><h3 className="mt-4 text-sm font-semibold text-white">{label}</h3><p className="mt-2 text-[13px] leading-relaxed text-slate-500">No model has been assigned to this BIM-GIS node yet. The viewer, data structure and interaction shell are ready for the high-tech park model package.</p></div></div>;
   }
 
   return <>
@@ -237,9 +237,9 @@ export function BimModelViewer({ modelUrl, label }: BimModelViewerProps) {
     <div className="absolute left-4 top-4 z-10 flex items-center gap-2 rounded-xl border border-white/[.08] bg-[#06111f]/82 p-1.5 shadow-xl backdrop-blur-xl">
       <button onClick={() => resetRef.current()} className="airport-icon-button" title="Reset BIM camera"><RotateCcw size={14} /></button>
       <button onClick={() => { const next = !wireframe; setWireframe(next); wireframeRef.current(next); }} className={`airport-button ${wireframe ? "border-cyan-400/30 bg-cyan-400/10 text-cyan-200" : ""}`}><ScanLine size={14} /> Wireframe</button>
-      <span className="px-2 text-[9px] font-semibold text-cyan-200">{label}</span>
+      <span className="px-2 text-[11px] font-semibold text-cyan-200">{label}</span>
     </div>
-    {loading && <div className="absolute bottom-5 left-1/2 z-10 w-72 -translate-x-1/2 rounded-xl border border-white/10 bg-[#071426]/94 p-3 shadow-2xl backdrop-blur-xl"><div className="flex items-center justify-between text-[10px] text-slate-300"><span className="flex items-center gap-2"><Loader2 size={13} className="animate-spin text-cyan-300" />Loading BIM model</span><b>{progress}%</b></div><div className="mt-2 h-1 overflow-hidden rounded bg-white/10"><div className="h-full bg-cyan-300 transition-[width]" style={{ width: `${progress}%` }} /></div></div>}
-    {error && <div className="absolute bottom-5 left-1/2 z-10 max-w-lg -translate-x-1/2 rounded-xl border border-red-400/25 bg-red-400/10 px-4 py-3 text-[10px] text-red-200">Unable to load {label}: {error}</div>}
+    {loading && <div className="absolute bottom-5 left-1/2 z-10 w-72 -translate-x-1/2 rounded-xl border border-white/10 bg-[#071426]/94 p-3 shadow-2xl backdrop-blur-xl"><div className="flex items-center justify-between text-[12px] text-slate-300"><span className="flex items-center gap-2"><Loader2 size={13} className="animate-spin text-cyan-300" />Loading BIM model</span><b>{progress}%</b></div><div className="mt-2 h-1 overflow-hidden rounded bg-white/10"><div className="h-full bg-cyan-300 transition-[width]" style={{ width: `${progress}%` }} /></div></div>}
+    {error && <div className="absolute bottom-5 left-1/2 z-10 max-w-lg -translate-x-1/2 rounded-xl border border-red-400/25 bg-red-400/10 px-4 py-3 text-[12px] text-red-200">Unable to load {label}: {error}</div>}
   </>;
 }

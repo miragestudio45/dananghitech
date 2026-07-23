@@ -79,6 +79,10 @@
 }
 
 @theme inline {
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.35;
+  --text-sm: 0.9375rem;
+  --text-sm--line-height: 1.45;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -177,6 +181,17 @@
     font-size: var(--text-base);
     font-weight: var(--font-weight-normal);
     line-height: 1.5;
+  }
+
+  textarea,
+  select {
+    font-size: var(--text-base);
+    line-height: 1.5;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    opacity: 1;
   }
 
   /* Custom scrollbar styles matching Da Nang site */

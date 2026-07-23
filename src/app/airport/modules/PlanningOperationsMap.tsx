@@ -118,13 +118,13 @@ export function PlanningOperationsMap({ parcels, selectedId, onSelect }: { parce
     <div className="relative h-full w-full overflow-hidden rounded-b-xl bg-[#06111f]">
       <div ref={containerRef} className="h-full w-full" />
       <div className="absolute left-3 top-3 z-20 flex items-center rounded-lg border border-white/10 bg-[#06111f]/88 p-1 shadow-xl backdrop-blur">
-        <button onClick={() => setIs3D(false)} className={`rounded-md px-2.5 py-1.5 text-[9px] font-semibold ${!is3D ? "bg-cyan-300 text-slate-950" : "text-slate-300"}`}>2D parcels</button>
-        <button onClick={() => setIs3D(true)} className={`rounded-md px-2.5 py-1.5 text-[9px] font-semibold ${is3D ? "bg-cyan-300 text-slate-950" : "text-slate-300"}`}>3D planning</button>
+        <button onClick={() => setIs3D(false)} className={`rounded-md px-2.5 py-1.5 text-[11px] font-semibold ${!is3D ? "bg-cyan-300 text-slate-950" : "text-slate-300"}`}>2D parcels</button>
+        <button onClick={() => setIs3D(true)} className={`rounded-md px-2.5 py-1.5 text-[11px] font-semibold ${is3D ? "bg-cyan-300 text-slate-950" : "text-slate-300"}`}>3D planning</button>
         <span className="mx-1 h-4 w-px bg-white/10" />
-        <button onClick={() => setMapTheme("light")} title="Chế độ bản đồ sáng" className={`rounded-md px-2.5 py-1.5 text-[9px] font-semibold ${mapTheme === "light" ? "bg-amber-100 text-slate-950" : "text-slate-300"}`}>Sáng</button>
-        <button onClick={() => setMapTheme("dark")} title="Chế độ bản đồ tối" className={`rounded-md px-2.5 py-1.5 text-[9px] font-semibold ${mapTheme === "dark" ? "bg-slate-600 text-white" : "text-slate-300"}`}>Tối</button>
+        <button onClick={() => setMapTheme("light")} title="Chế độ bản đồ sáng" className={`rounded-md px-2.5 py-1.5 text-[11px] font-semibold ${mapTheme === "light" ? "bg-amber-100 text-slate-950" : "text-slate-300"}`}>Sáng</button>
+        <button onClick={() => setMapTheme("dark")} title="Chế độ bản đồ tối" className={`rounded-md px-2.5 py-1.5 text-[11px] font-semibold ${mapTheme === "dark" ? "bg-slate-600 text-white" : "text-slate-300"}`}>Tối</button>
       </div>
-      <div className="absolute bottom-3 left-3 z-20 rounded-lg border border-white/10 bg-[#06111f]/88 px-3 py-2 text-[8px] text-slate-300 backdrop-blur">VN-2000 · Hòn Dấu · Click parcel để xem hồ sơ</div>
+      <div className="absolute bottom-3 left-3 z-20 rounded-lg border border-white/10 bg-[#06111f]/88 px-3 py-2 text-[10px] text-slate-300 backdrop-blur">VN-2000 · Hòn Dấu · Click parcel để xem hồ sơ</div>
     </div>
   );
 }

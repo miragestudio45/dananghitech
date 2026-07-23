@@ -1,5 +1,9 @@
 .airport-platform {
   --airport-bg: #04101e;
+  --color-slate-300: #d7e1ec;
+  --color-slate-400: #c0cedd;
+  --color-slate-500: #a7b8cb;
+  --color-slate-600: #8fa3bb;
   background:
     radial-gradient(circle at 50% -20%, rgba(24, 113, 153, .16), transparent 42%),
     linear-gradient(180deg, #061423 0%, #030b15 100%);
@@ -34,7 +38,9 @@
   gap: .4rem;
   border-radius: .5rem;
   padding: .48rem .7rem;
-  font-size: 10px;
+  min-height: 36px;
+  font-size: 12px;
+  line-height: 1.25;
   font-weight: 600;
 }
 
@@ -58,9 +64,11 @@
 .airport-icon-button:disabled { opacity: .35; cursor: not-allowed; }
 
 .airport-select {
+  min-height: 36px;
   border-radius: .5rem;
   padding: .47rem .65rem;
-  font-size: 9px;
+  font-size: 12px;
+  line-height: 1.25;
   outline: none;
 }
 
@@ -110,7 +118,7 @@
 .maplibregl-ctrl-group,
 .maplibregl-popup-content { border: 1px solid rgba(255,255,255,.12) !important; background: rgba(6,17,31,.92) !important; color: #e2e8f0 !important; box-shadow: 0 12px 32px rgba(0,0,0,.38) !important; }
 .maplibregl-ctrl-group button { filter: invert(1) brightness(1.35); }
-.maplibregl-ctrl-attrib { background: rgba(6,17,31,.78) !important; color: #94a3b8 !important; }
+.maplibregl-ctrl-attrib { background: rgba(6,17,31,.78) !important; color: #a7b8cb !important; font-size: 10px !important; line-height: 1.3 !important; }
 .maplibregl-ctrl-attrib a { color: #a5f3fc !important; }
 
 @keyframes airport-grid-drift { from { transform: translateY(0); } to { transform: translateY(42px); } }
@@ -124,8 +132,43 @@
 /* Keep dense operational tables balanced across all airport modules. */
 .airport-platform table thead th,
 .airport-platform table thead button {
-  font-size: 8px !important;
-  line-height: 1.1 !important;
+  font-size: 11px !important;
+  line-height: 1.35 !important;
   letter-spacing: .07em !important;
-  font-weight: 600 !important;
+  font-weight: 700 !important;
+  color: #c0cedd !important;
+}
+
+.airport-platform table thead th {
+  padding: .625rem .75rem !important;
+}
+
+.airport-platform table tbody td {
+  padding-block: .625rem !important;
+  font-size: 12px !important;
+  line-height: 1.45 !important;
+}
+
+.airport-platform input,
+.airport-platform textarea,
+.airport-platform select {
+  color: #f1f5f9;
+}
+
+.airport-platform input::placeholder,
+.airport-platform textarea::placeholder {
+  color: #8fa3bb;
+}
+
+.airport-platform .recharts-cartesian-axis-tick-value,
+.airport-platform .recharts-legend-item-text,
+.airport-platform .recharts-tooltip-wrapper {
+  font-size: 11px !important;
+}
+
+@media (max-width: 1279px) {
+  .airport-platform .airport-header-subtitle,
+  .airport-platform .airport-header-spatial {
+    display: none;
+  }
 }

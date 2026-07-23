@@ -59,7 +59,7 @@ export function ImplementationRoadmapModule() {
   }, [multiplier]);
 
   return <>
-    <div className="rounded-xl border border-amber-400/20 bg-amber-400/[.055] px-4 py-3 text-[10px] leading-relaxed text-amber-100">
+    <div className="rounded-xl border border-amber-400/20 bg-amber-400/[.055] px-4 py-3 text-[12px] leading-relaxed text-amber-100">
       <b>Indicative planning estimate only.</b> The range below is a proposal-planning framework, not a commercial quotation. Final CAPEX/OPEX requires site survey, point-list audit, integration scope, device retrofit quantities, software licensing, tax and procurement assumptions.
     </div>
 
@@ -73,8 +73,8 @@ export function ImplementationRoadmapModule() {
     </div>
 
     <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/[.07] bg-[#071426]/80 p-3">
-      <div><p className="text-[9px] uppercase tracking-[.15em] text-cyan-300">Investment scenario</p><p className="mt-1 text-[10px] text-slate-500">Adjusts scope depth, resilience, device retrofit and integration intensity.</p></div>
-      <div className="flex rounded-xl border border-white/10 bg-white/[.025] p-1">{(["Lean","Target","Advanced"] as const).map((item) => <button key={item} onClick={() => setScenario(item)} className={`rounded-lg px-4 py-2 text-[9px] font-semibold ${scenario === item ? "bg-cyan-300 text-slate-950" : "text-slate-500 hover:text-white"}`}>{item}</button>)}</div>
+      <div><p className="text-[11px] uppercase tracking-[.15em] text-cyan-300">Investment scenario</p><p className="mt-1 text-[12px] text-slate-500">Adjusts scope depth, resilience, device retrofit and integration intensity.</p></div>
+      <div className="flex rounded-xl border border-white/10 bg-white/[.025] p-1">{(["Lean","Target","Advanced"] as const).map((item) => <button key={item} onClick={() => setScenario(item)} className={`rounded-lg px-4 py-2 text-[11px] font-semibold ${scenario === item ? "bg-cyan-300 text-slate-950" : "text-slate-500 hover:text-white"}`}>{item}</button>)}</div>
     </div>
 
     <div className="grid gap-4 xl:grid-cols-4">
@@ -85,10 +85,10 @@ export function ImplementationRoadmapModule() {
         return <AirportPanel key={phase.id} title={`${phase.id} · ${phase.name}`} subtitle={phase.duration}>
           <div className="space-y-4 p-4">
             <div className="flex items-center justify-between"><span className="grid h-10 w-10 place-items-center rounded-xl bg-cyan-400/10 text-cyan-300"><Icon size={18}/></span><AirportStatusBadge status={index === 0 ? "normal" : index === 1 ? "info" : "warning"} label={index === 0 ? "Start here" : index === 1 ? "Core rollout" : "Data dependent"}/></div>
-            <div><p className="text-[8px] uppercase tracking-[.14em] text-slate-600">Indicative range</p><p className="mt-1 text-2xl font-semibold text-white">₫{low}–{high}B</p></div>
-            <div className="space-y-2">{phase.scope.map((item) => <div key={item} className="flex gap-2 rounded-lg bg-white/[.025] p-2.5 text-[9px] leading-relaxed text-slate-300"><CheckCircle2 size={13} className="mt-0.5 flex-none text-emerald-300"/>{item}</div>)}</div>
-            <div className="rounded-lg border border-violet-400/12 bg-violet-400/[.035] p-3"><p className="text-[8px] uppercase tracking-[.12em] text-violet-300">Dependency</p><p className="mt-2 text-[9px] leading-relaxed text-slate-400">{phase.dependencies}</p></div>
-            <div className="rounded-lg border border-cyan-400/12 bg-cyan-400/[.035] p-3"><p className="text-[8px] uppercase tracking-[.12em] text-cyan-300">Acceptance outcome</p><p className="mt-2 text-[9px] leading-relaxed text-slate-400">{phase.acceptance}</p></div>
+            <div><p className="text-[10px] uppercase tracking-[.14em] text-slate-600">Indicative range</p><p className="mt-1 text-2xl font-semibold text-white">₫{low}–{high}B</p></div>
+            <div className="space-y-2">{phase.scope.map((item) => <div key={item} className="flex gap-2 rounded-lg bg-white/[.025] p-2.5 text-[11px] leading-relaxed text-slate-300"><CheckCircle2 size={13} className="mt-0.5 flex-none text-emerald-300"/>{item}</div>)}</div>
+            <div className="rounded-lg border border-violet-400/12 bg-violet-400/[.035] p-3"><p className="text-[10px] uppercase tracking-[.12em] text-violet-300">Dependency</p><p className="mt-2 text-[11px] leading-relaxed text-slate-400">{phase.dependencies}</p></div>
+            <div className="rounded-lg border border-cyan-400/12 bg-cyan-400/[.035] p-3"><p className="text-[10px] uppercase tracking-[.12em] text-cyan-300">Acceptance outcome</p><p className="mt-2 text-[11px] leading-relaxed text-slate-400">{phase.acceptance}</p></div>
           </div>
         </AirportPanel>;
       })}
@@ -103,7 +103,7 @@ export function ImplementationRoadmapModule() {
           ["BIM-GIS & survey data",12,"Reality capture, models, mapping and CDE"],
           ["Infrastructure & cybersecurity",12,"Edge, storage, network, resilience, SOC controls"],
           ["AI, simulation & commissioning",10,"Models, validation, training and acceptance"],
-        ].map(([name,value,detail]) => <div key={String(name)} className="rounded-xl border border-white/[.07] bg-white/[.025] p-4"><div className="flex items-center justify-between"><p className="text-[10px] font-semibold text-white">{name}</p><b className="text-cyan-200">{value}%</b></div><div className="mt-3 h-2 overflow-hidden rounded-full bg-white/[.06]"><div className="h-full rounded-full bg-cyan-300" style={{width:`${value}%`}}/></div><p className="mt-2 text-[8px] leading-relaxed text-slate-600">{detail}</p></div>)}</div>
+        ].map(([name,value,detail]) => <div key={String(name)} className="rounded-xl border border-white/[.07] bg-white/[.025] p-4"><div className="flex items-center justify-between"><p className="text-[12px] font-semibold text-white">{name}</p><b className="text-cyan-200">{value}%</b></div><div className="mt-3 h-2 overflow-hidden rounded-full bg-white/[.06]"><div className="h-full rounded-full bg-cyan-300" style={{width:`${value}%`}}/></div><p className="mt-2 text-[10px] leading-relaxed text-slate-600">{detail}</p></div>)}</div>
       </AirportPanel>
       <AirportPanel title="Commercial and delivery assumptions"><div className="space-y-2 p-3">{[
         ["Included","Platform, integration, priority field retrofit, commissioning and training"],
@@ -111,13 +111,13 @@ export function ImplementationRoadmapModule() {
         ["Excluded from demo estimate","Civil works, major plant replacement, taxes and long-term managed service"],
         ["Governance","Stage-gate approval, BoQ baseline, change control and value realization tracking"],
         ["Recommended next step","Four-week discovery and technical survey before commercial proposal"],
-      ].map(([a,b],index) => <div key={a} className="rounded-xl border border-white/[.06] bg-white/[.025] p-3"><div className="flex items-start gap-3"><span className="grid h-8 w-8 flex-none place-items-center rounded-lg bg-cyan-400/10 text-cyan-300">{index === 0 ? <Boxes size={15}/> : index === 1 ? <ClipboardList size={15}/> : index === 2 ? <ShieldCheck size={15}/> : index === 3 ? <BarChart3 size={15}/> : <Timer size={15}/>}</span><div><p className="text-[9px] font-semibold text-white">{a}</p><p className="mt-1 text-[8px] leading-relaxed text-slate-500">{b}</p></div></div></div>)}</div></AirportPanel>
+      ].map(([a,b],index) => <div key={a} className="rounded-xl border border-white/[.06] bg-white/[.025] p-3"><div className="flex items-start gap-3"><span className="grid h-8 w-8 flex-none place-items-center rounded-lg bg-cyan-400/10 text-cyan-300">{index === 0 ? <Boxes size={15}/> : index === 1 ? <ClipboardList size={15}/> : index === 2 ? <ShieldCheck size={15}/> : index === 3 ? <BarChart3 size={15}/> : <Timer size={15}/>}</span><div><p className="text-[11px] font-semibold text-white">{a}</p><p className="mt-1 text-[10px] leading-relaxed text-slate-500">{b}</p></div></div></div>)}</div></AirportPanel>
     </div>
 
     <div className="grid gap-4 xl:grid-cols-3">
-      <AirportPanel title="Discovery outputs"><div className="space-y-2 p-3">{["System and data inventory","BIM-GIS readiness assessment","OT point-list and network audit","Priority use-case value baseline","Phased BoQ and commercial model"].map((item)=><div key={item} className="flex gap-2 rounded-lg bg-white/[.025] p-3 text-[9px] text-slate-300"><Database size={13} className="text-cyan-300"/>{item}</div>)}</div></AirportPanel>
-      <AirportPanel title="Value tracking"><div className="space-y-2 p-3">{["Avoided production downtime","Energy and utility efficiency","Faster investor and permit workflows","Lower maintenance and inspection cost","Compliance, safety and resilience improvement"].map((item)=><div key={item} className="flex gap-2 rounded-lg bg-white/[.025] p-3 text-[9px] text-slate-300"><Sparkles size={13} className="text-violet-300"/>{item}</div>)}</div></AirportPanel>
-      <AirportPanel title="Decision gates"><div className="space-y-2 p-3">{["G0 · Scope and data readiness","G1 · Foundation acceptance","G2 · Live operations acceptance","G3 · Model validation and value proof","G4 · Multi-site scale decision"].map((item,index)=><button key={item} onClick={()=>toast.info(`${item} checklist opened`)} className="flex w-full items-center justify-between rounded-lg bg-white/[.025] p-3 text-left text-[9px] text-slate-300"><span>{item}</span><AirportStatusBadge status={index<2?"normal":"info"}/></button>)}</div></AirportPanel>
+      <AirportPanel title="Discovery outputs"><div className="space-y-2 p-3">{["System and data inventory","BIM-GIS readiness assessment","OT point-list and network audit","Priority use-case value baseline","Phased BoQ and commercial model"].map((item)=><div key={item} className="flex gap-2 rounded-lg bg-white/[.025] p-3 text-[11px] text-slate-300"><Database size={13} className="text-cyan-300"/>{item}</div>)}</div></AirportPanel>
+      <AirportPanel title="Value tracking"><div className="space-y-2 p-3">{["Avoided production downtime","Energy and utility efficiency","Faster investor and permit workflows","Lower maintenance and inspection cost","Compliance, safety and resilience improvement"].map((item)=><div key={item} className="flex gap-2 rounded-lg bg-white/[.025] p-3 text-[11px] text-slate-300"><Sparkles size={13} className="text-violet-300"/>{item}</div>)}</div></AirportPanel>
+      <AirportPanel title="Decision gates"><div className="space-y-2 p-3">{["G0 · Scope and data readiness","G1 · Foundation acceptance","G2 · Live operations acceptance","G3 · Model validation and value proof","G4 · Multi-site scale decision"].map((item,index)=><button key={item} onClick={()=>toast.info(`${item} checklist opened`)} className="flex w-full items-center justify-between rounded-lg bg-white/[.025] p-3 text-left text-[11px] text-slate-300"><span>{item}</span><AirportStatusBadge status={index<2?"normal":"info"}/></button>)}</div></AirportPanel>
     </div>
   </>;
 }

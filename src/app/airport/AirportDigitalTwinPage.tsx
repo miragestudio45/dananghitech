@@ -80,7 +80,7 @@ function AirportDigitalTwinPageContent() {
         {!sidebarOpen && (
           <button
             onClick={() => setSidebarOpen(true)}
-            className="airport-nav-toggle absolute left-3 top-3 z-[72] flex items-center gap-2 rounded-xl border border-cyan-400/20 bg-[#06111f]/84 px-3 py-2 text-[10px] font-semibold text-cyan-200 shadow-xl backdrop-blur-xl hover:bg-cyan-400/10"
+            className="airport-nav-toggle absolute left-3 top-3 z-[72] flex items-center gap-2 rounded-xl border border-cyan-400/20 bg-[#06111f]/84 px-3 py-2 text-[12px] font-semibold text-cyan-200 shadow-xl backdrop-blur-xl hover:bg-cyan-400/10"
             title={tr("Show module navigation")}
           >
             <PanelLeftOpen size={15} />

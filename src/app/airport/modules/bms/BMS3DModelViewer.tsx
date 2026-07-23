@@ -514,14 +514,14 @@ export const BMS3DModelViewer: React.FC<BMS3DModelViewerProps> = ({
       {loadState === "loading" && (
         <div className="absolute inset-0 flex flex-col items-center justify-center z-20 bg-[#041020]/80 backdrop-blur-sm gap-3">
           <Loader size={26} className="animate-spin" style={{ color: accentColor }} />
-          <p className="text-[11px] font-mono tracking-wide" style={{ color: accentColor }}>
+          <p className="text-[13px] font-mono tracking-wide" style={{ color: accentColor }}>
             Loading {equipmentName}...
           </p>
           <div className="w-44 h-1 bg-slate-800 rounded-full overflow-hidden">
             <div className="h-full rounded-full transition-all duration-300"
                  style={{ width: `${progress}%`, background: `linear-gradient(90deg, ${accentColor}, #00e5ff)` }} />
           </div>
-          <p className="text-[9px] text-slate-500">{progress}%</p>
+          <p className="text-[11px] text-slate-500">{progress}%</p>
         </div>
       )}
 
@@ -530,7 +530,7 @@ export const BMS3DModelViewer: React.FC<BMS3DModelViewerProps> = ({
         <div className="absolute inset-0 flex flex-col items-center justify-center z-20 bg-[#041020]/85 backdrop-blur-sm gap-3 px-6 text-center">
           <AlertTriangle size={30} className="text-red-400" />
           <p className="text-red-300 text-sm font-semibold">Model không tải được</p>
-          <p className="text-slate-500 text-[10px] font-mono">{errorMsg || modelUrl}</p>
+          <p className="text-slate-500 text-[12px] font-mono">{errorMsg || modelUrl}</p>
           <button onClick={() => loadModel(modelUrl)}
             className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs border transition-all"
             style={{ background: "rgba(239,68,68,0.1)", borderColor: "rgba(239,68,68,0.3)", color: "#fca5a5" }}>
@@ -542,7 +542,7 @@ export const BMS3DModelViewer: React.FC<BMS3DModelViewerProps> = ({
       {/* Hover name */}
       {loadState === "loaded" && hoveredName && (
         <div className="absolute top-3 left-3 z-10 pointer-events-none">
-          <div className="px-2.5 py-1 rounded-lg bg-black/65 backdrop-blur-md border border-cyan-500/30 text-cyan-200 text-[10px] font-mono">
+          <div className="px-2.5 py-1 rounded-lg bg-black/65 backdrop-blur-md border border-cyan-500/30 text-cyan-200 text-[12px] font-mono">
             {hoveredName}
           </div>
         </div>
@@ -560,7 +560,7 @@ export const BMS3DModelViewer: React.FC<BMS3DModelViewerProps> = ({
                 key={c.clipName}
                 onClick={() => toggleClip(c.clipName)}
                 title={`${c.playing ? "Pause" : "Play"} ${c.label}`}
-                className="flex flex-shrink-0 items-center gap-1.5 rounded-md border px-2 py-1 text-[9px] font-medium transition-all"
+                className="flex flex-shrink-0 items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] font-medium transition-all"
                 style={c.playing
                   ? { background: `${accentColor}18`, borderColor: `${accentColor}45`, color: accentColor }
                   : { background: "rgba(255,255,255,0.05)", borderColor: "rgba(255,255,255,0.1)", color: "#94a3b8" }}
@@ -584,8 +584,8 @@ export const BMS3DModelViewer: React.FC<BMS3DModelViewerProps> = ({
               <button
                 onClick={stopAll}
                 title="Stop all animations"
-                className="flex-shrink-0 rounded-md border px-2 py-1 text-[9px] transition-all"
-                style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)", color: "#64748b" }}
+                className="flex-shrink-0 rounded-md border px-2 py-1 text-[11px] transition-all"
+                style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)", color: "#94a3b8" }}
               >
                 Stop all
               </button>

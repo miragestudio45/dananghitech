@@ -414,7 +414,7 @@ export const BMSModelViewer: React.FC<BMSModelViewerProps> = ({
       {loadState === "loading" && (
         <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-[#041020]/80 backdrop-blur-sm">
           <Loader size={26} className="animate-spin" style={{ color: accentColor }} />
-          <p className="text-[11px] font-mono" style={{ color: accentColor }}>Đang tải model 3D... {progress > 0 ? `${progress}%` : ""}</p>
+          <p className="text-[13px] font-mono" style={{ color: accentColor }}>Đang tải model 3D... {progress > 0 ? `${progress}%` : ""}</p>
         </div>
       )}
 
@@ -423,7 +423,7 @@ export const BMSModelViewer: React.FC<BMSModelViewerProps> = ({
         <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-[#041020]/85 backdrop-blur-sm px-6 text-center">
           <AlertTriangle size={30} className="text-red-400" />
           <p className="text-sm font-semibold text-red-300">Không tải được model 3D</p>
-          <p className="text-[10px] font-mono text-slate-500 break-all">{errorMsg || modelUrl}</p>
+          <p className="text-[12px] font-mono text-slate-500 break-all">{errorMsg || modelUrl}</p>
           <button onClick={() => loadModel(modelUrl)}
             className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs border transition-all"
             style={{ background: "rgba(239,68,68,0.1)", borderColor: "rgba(239,68,68,0.3)", color: "#fca5a5" }}>
@@ -434,7 +434,7 @@ export const BMSModelViewer: React.FC<BMSModelViewerProps> = ({
 
       {/* Hover label */}
       {loadState === "loaded" && hoverName && !isolatedName && (
-        <div className="absolute top-3 left-3 z-10 pointer-events-none px-2.5 py-1 rounded-lg bg-black/65 backdrop-blur-md border text-[11px] font-medium"
+        <div className="absolute top-3 left-3 z-10 pointer-events-none px-2.5 py-1 rounded-lg bg-black/65 backdrop-blur-md border text-[13px] font-medium"
              style={{ borderColor: `${accentColor}55`, color: accentColor }}>
           {hoverName}
         </div>
@@ -443,12 +443,12 @@ export const BMSModelViewer: React.FC<BMSModelViewerProps> = ({
       {/* Isolated banner + back */}
       {loadState === "loaded" && isolatedName && (
         <div className="absolute top-3 left-3 right-3 z-10 flex items-center justify-between gap-2">
-          <div className="px-2.5 py-1 rounded-lg bg-black/65 backdrop-blur-md border text-[11px] font-medium"
+          <div className="px-2.5 py-1 rounded-lg bg-black/65 backdrop-blur-md border text-[13px] font-medium"
                style={{ borderColor: `${accentColor}55`, color: accentColor }}>
             Đang xem: {isolatedName}
           </div>
           <button onClick={restoreAllObjects}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-all"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-semibold border transition-all"
             style={{ background: "rgba(0,0,0,0.6)", borderColor: `${accentColor}55`, color: accentColor }}>
             <Undo2 size={12} /> Quay lại toàn bộ
           </button>
