@@ -39,7 +39,7 @@ export function BMSAssetLocationModal({
       <motion.div
         initial={{ opacity: 0, scale: .97, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: .97, y: 10 }}
         transition={{ type: "spring", damping: 28, stiffness: 260 }}
-        className="fixed bottom-4 left-4 right-4 top-[80px] z-[121] flex min-h-0 flex-col overflow-hidden rounded-2xl border border-cyan-400/18 bg-[#06111f] shadow-[0_30px_100px_rgba(0,0,0,.65)]"
+        className="fixed bottom-4 left-4 right-4 top-[80px] z-[121] flex min-h-0 flex-col overflow-hidden rounded-2xl border border-cyan-400/18 bg-[var(--airport-sidebar)] shadow-[0_30px_100px_var(--airport-shadow-heavy)]"
       >
         <div className="flex items-center gap-3 border-b border-white/[.08] px-4 py-3">
           <span className="grid h-9 w-9 place-items-center rounded-lg border border-cyan-400/18 bg-cyan-400/[.08] text-cyan-300"><MapPin size={17}/></span>
@@ -52,7 +52,7 @@ export function BMSAssetLocationModal({
         </div>
         <div className="grid min-h-0 flex-1 grid-cols-1 xl:grid-cols-[minmax(0,1fr)_320px]">
           <div className="min-h-0 p-3"><BMSModelViewer modelUrl={ASSET_LOCATION_MODEL_URL} highlightObjectName={info?.locationObjectName} accentColor={equipment.accentColor}/></div>
-          <aside className="airport-scrollbar min-h-0 overflow-y-auto border-l border-white/[.08] bg-[#08172a]/88 p-4">
+          <aside className="airport-scrollbar min-h-0 overflow-y-auto border-l border-white/[.08] bg-[var(--airport-panel-alt)]/88 p-4">
             <p className="text-[11px] font-semibold uppercase tracking-[.16em] text-slate-500">{vi ? "Thông tin asset" : "Asset information"}</p>
             <div className="mt-3 space-y-2">
               {[

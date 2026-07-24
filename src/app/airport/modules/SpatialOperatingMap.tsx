@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import maplibregl, { type GeoJSONSource, type Map as MapLibreMap, type Marker } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
+import { useTheme } from "../../theme/ThemeProvider";
 
 export const SPATIAL_OPERATING_SITES = [
   { name: "Administration & IOC", coordinates: [108.22114, 16.08649] as [number, number], tone: "#67e8f9" },
@@ -50,27 +51,29 @@ function addSpatialLayers(map: MapLibreMap, activeLayer: string, is3D: boolean) 
 }
 
 export function SpatialOperatingMap({ selectedSite, onSelectSite, activeLayer }: { selectedSite: string; onSelectSite: (name: string) => void; activeLayer: string }) {
+  const { theme: appTheme } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const markersRef = useRef<Marker[]>([]);
   const onSelectSiteRef = useRef(onSelectSite);
   const activeLayerRef = useRef(activeLayer);
   const is3DRef = useRef(true);
-  const mapThemeRef = useRef<MapTheme>("dark");
+  const mapThemeRef = useRef<MapTheme>(appTheme);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
   const [is3D, setIs3D] = useState(true);
-  const [mapTheme, setMapTheme] = useState<MapTheme>("dark");
+  const [mapTheme, setMapTheme] = useState<MapTheme>(appTheme);
 
   useEffect(() => { onSelectSiteRef.current = onSelectSite; }, [onSelectSite]);
   useEffect(() => { activeLayerRef.current = activeLayer; }, [activeLayer]);
   useEffect(() => { is3DRef.current = is3D; }, [is3D]);
+  useEffect(() => { setMapTheme(appTheme); }, [appTheme]);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: MAP_STYLES.dark,
+      style: MAP_STYLES[mapThemeRef.current],
       center: MAP_CENTER,
       zoom: 15.8,
       pitch: 58,
@@ -157,17 +160,17 @@ export function SpatialOperatingMap({ selectedSite, onSelectSite, activeLayer }:
   }, [ready, selectedSite]);
 
   return (
-    <div className="absolute inset-0 overflow-hidden rounded-xl bg-[#05111f]">
+    <div className="absolute inset-0 overflow-hidden rounded-xl bg-[var(--airport-panel)]">
       <div ref={containerRef} className="h-full w-full" />
-      <div className="absolute left-1/2 top-3 z-20 flex -translate-x-1/2 items-center rounded-lg border border-white/10 bg-[#06111f]/88 p-1 shadow-xl backdrop-blur-xl">
-        <button onClick={() => setIs3D(false)} className={`rounded-md px-2.5 py-1.5 text-[11px] font-semibold ${!is3D ? "bg-cyan-300 text-slate-950" : "text-slate-400 hover:text-white"}`}>2D</button>
-        <button onClick={() => setIs3D(true)} className={`rounded-md px-2.5 py-1.5 text-[11px] font-semibold ${is3D ? "bg-cyan-300 text-slate-950" : "text-slate-400 hover:text-white"}`}>3D Buildings</button>
+      <div className="absolute left-1/2 top-3 z-20 flex -translate-x-1/2 items-center rounded-lg border border-white/10 bg-[var(--airport-sidebar)]/88 p-1 shadow-xl backdrop-blur-xl">
+        <button onClick={() => setIs3D(false)} className={`rounded-md px-2.5 py-1.5 text-[11px] font-semibold ${!is3D ? "bg-cyan-300 text-[var(--airport-accent-ink)]" : "text-slate-400 hover:text-white"}`}>2D</button>
+        <button onClick={() => setIs3D(true)} className={`rounded-md px-2.5 py-1.5 text-[11px] font-semibold ${is3D ? "bg-cyan-300 text-[var(--airport-accent-ink)]" : "text-slate-400 hover:text-white"}`}>3D Buildings</button>
         <span className="mx-1 h-4 w-px bg-white/10" />
-        <button onClick={() => setMapTheme("light")} title="Chế độ bản đồ sáng" className={`rounded-md px-2.5 py-1.5 text-[11px] font-semibold ${mapTheme === "light" ? "bg-amber-100 text-slate-950" : "text-slate-400 hover:text-white"}`}>Sáng</button>
+        <button onClick={() => setMapTheme("light")} title="Chế độ bản đồ sáng" className={`rounded-md px-2.5 py-1.5 text-[11px] font-semibold ${mapTheme === "light" ? "bg-[#fef3c7] text-slate-950" : "text-slate-400 hover:text-white"}`}>Sáng</button>
         <button onClick={() => setMapTheme("dark")} title="Chế độ bản đồ tối" className={`rounded-md px-2.5 py-1.5 text-[11px] font-semibold ${mapTheme === "dark" ? "bg-slate-600 text-white" : "text-slate-400 hover:text-white"}`}>Tối</button>
       </div>
-      {!ready && !failed && <div className="absolute inset-0 grid place-items-center bg-[#06111f]"><div className="text-center"><span className="mx-auto block h-7 w-7 animate-spin rounded-full border-2 border-cyan-300/20 border-t-cyan-300" /><p className="mt-3 text-[12px] text-slate-400">Loading live GIS basemap...</p></div></div>}
-      {failed && <div className="absolute inset-0 grid place-items-center bg-[#06111f]"><div className="max-w-xs text-center"><p className="text-xs font-semibold text-white">GIS basemap is temporarily unavailable</p><p className="mt-2 text-[12px] leading-relaxed text-slate-500">Operational layers remain available. Check the OpenFreeMap connection and reload this view.</p></div></div>}
+      {!ready && !failed && <div className="absolute inset-0 grid place-items-center bg-[var(--airport-sidebar)]"><div className="text-center"><span className="mx-auto block h-7 w-7 animate-spin rounded-full border-2 border-cyan-300/20 border-t-cyan-300" /><p className="mt-3 text-[12px] text-slate-400">Loading live GIS basemap...</p></div></div>}
+      {failed && <div className="absolute inset-0 grid place-items-center bg-[var(--airport-sidebar)]"><div className="max-w-xs text-center"><p className="text-xs font-semibold text-white">GIS basemap is temporarily unavailable</p><p className="mt-2 text-[12px] leading-relaxed text-slate-500">Operational layers remain available. Check the OpenFreeMap connection and reload this view.</p></div></div>}
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(3,10,20,.34),transparent_32%,transparent_72%,rgba(3,10,20,.18))]" />
     </div>
   );

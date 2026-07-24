@@ -6,7 +6,9 @@ import {
   SlidersHorizontal, Wind, X,
 } from "lucide-react";
 import { toast } from "sonner";
-import overviewImage from "@/assets/airport/Overview_HighTechPark.webp";
+import overviewImageDark from "@/assets/airport/Overview_HighTechPark.webp";
+import overviewImageLight from "@/assets/airport/Overview_HighTechPark_Light.png";
+import { useTheme } from "../../theme/ThemeProvider";
 import type { AirportModuleId, AirportStatus, SpatialNode } from "../config/airportRegistry";
 import {
   AIRPORT_HOTSPOTS, AIRPORT_LAYERS, AIRPORT_SPATIAL_HIERARCHY,
@@ -96,6 +98,8 @@ export function AirportOverview({ viewMode, onViewModeChange, onOpenModule, acti
   sectionRequest: number;
 }) {
   const { language, tr } = useAirportLanguage();
+  const { theme } = useTheme();
+  const overviewImage = theme === "light" ? overviewImageLight : overviewImageDark;
   const [selected, setSelected] = useState<AirportHotspotDefinition | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
   const [layersOpen, setLayersOpen] = useState(false);
@@ -110,8 +114,8 @@ export function AirportOverview({ viewMode, onViewModeChange, onOpenModule, acti
     ? `absolute left-3 top-[246px] z-40 flex ${overlayWidthClass} flex-col gap-2`
     : `absolute left-3 top-[78px] z-40 flex ${overlayWidthClass} flex-col gap-2`;
   const layersPanelClass = viewMode === "3d"
-    ? `absolute left-3 top-[402px] z-40 ${overlayWidthClass} rounded-xl border border-white/10 bg-[#06111f]/91 p-3 shadow-2xl backdrop-blur-xl`
-    : `absolute left-3 top-[234px] z-40 ${overlayWidthClass} rounded-xl border border-white/10 bg-[#06111f]/91 p-3 shadow-2xl backdrop-blur-xl`;
+    ? `absolute left-3 top-[402px] z-40 ${overlayWidthClass} rounded-xl border border-white/10 bg-[var(--airport-sidebar)]/91 p-3 shadow-2xl backdrop-blur-xl`
+    : `absolute left-3 top-[234px] z-40 ${overlayWidthClass} rounded-xl border border-white/10 bg-[var(--airport-sidebar)]/91 p-3 shadow-2xl backdrop-blur-xl`;
 
   useEffect(() => {
     if (sectionRequest <= 0) return;
@@ -150,33 +154,32 @@ export function AirportOverview({ viewMode, onViewModeChange, onOpenModule, acti
   };
 
   return (
-    <div className="relative h-full min-h-0 overflow-hidden bg-[#04111f]">
+    <div className="relative h-full min-h-0 overflow-hidden bg-[var(--airport-panel)]">
       {viewMode === "3d" ? (
         <AirportOverview3D onBack2D={() => onViewModeChange("2d")} />
       ) : (
         <>
-          <img src={overviewImage} alt="Da Nang High-Tech Park night industrial overview" className="absolute inset-0 h-full w-full select-none object-cover object-center" draggable={false} />
-          <div className="pointer-events-none absolute inset-0 bg-[#03101d]/5" />
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_52%,rgba(1,8,18,.58)_100%)]" />
-          <div className="pointer-events-none absolute inset-0 opacity-[0.13]" style={{ backgroundImage: "linear-gradient(rgba(34,211,238,.15) 1px,transparent 1px),linear-gradient(90deg,rgba(34,211,238,.15) 1px,transparent 1px)", backgroundSize: "42px 42px" }} />
+          <img src={overviewImage} alt="Da Nang High-Tech Park night industrial overview" className="airport-overview-image absolute inset-0 h-full w-full select-none object-cover object-center" draggable={false} />
+          <div className="pointer-events-none absolute inset-0 bg-[var(--airport-panel)]/5" />
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_52%,var(--airport-overview-vignette)_100%)]" />
         </>
       )}
 
       <div className={overviewActionToolbarClass}>
-        <button onClick={() => setLayersOpen((open) => !open)} className={`airport-button w-full justify-start bg-[#06111f]/84 px-3 text-[12px] backdrop-blur-xl ${layersOpen ? "!border-cyan-400/30 !bg-cyan-400/10 !text-cyan-200" : ""}`}>
+        <button onClick={() => setLayersOpen((open) => !open)} className={`airport-button w-full justify-start bg-[var(--airport-sidebar)]/84 px-3 text-[12px] backdrop-blur-xl ${layersOpen ? "!border-cyan-400/30 !bg-cyan-400/10 !text-cyan-200" : ""}`}>
           <Layers3 size={14} />{layersOpen ? tr("Hide data layers") : tr("Show data layers")}
         </button>
-        <button onClick={() => openInfo("summary")} className={`airport-button w-full justify-start bg-[#06111f]/84 px-3 text-[12px] backdrop-blur-xl ${infoMode === "summary" ? "!border-cyan-400/30 !bg-cyan-400/10 !text-cyan-200" : ""}`}>
+        <button onClick={() => openInfo("summary")} className={`airport-button w-full justify-start bg-[var(--airport-sidebar)]/84 px-3 text-[12px] backdrop-blur-xl ${infoMode === "summary" ? "!border-cyan-400/30 !bg-cyan-400/10 !text-cyan-200" : ""}`}>
           <Gauge size={14} />{tr("Operational overview")}
         </button>
-        <button onClick={() => openInfo("insights")} className={`airport-button w-full justify-start bg-[#06111f]/84 px-3 text-[12px] backdrop-blur-xl ${infoMode === "insights" ? "!border-violet-400/30 !bg-violet-400/10 !text-violet-200" : ""}`}>
+        <button onClick={() => openInfo("insights")} className={`airport-button w-full justify-start bg-[var(--airport-sidebar)]/84 px-3 text-[12px] backdrop-blur-xl ${infoMode === "insights" ? "!border-violet-400/30 !bg-violet-400/10 !text-violet-200" : ""}`}>
           <BarChart3 size={14} />{tr("Operational insights")}
         </button>
       </div>
 
       <div className="pointer-events-none absolute left-1/2 top-3 z-30 hidden -translate-x-1/2 items-stretch gap-1.5 2xl:flex">
         {headlineKpis.map(([label, value, trend], index) => (
-          <div key={label} className={`min-w-[142px] rounded-xl border bg-[#06111f]/78 px-3 py-2 shadow-xl backdrop-blur-xl ${index === 3 ? "border-red-400/25" : "border-cyan-400/15"}`}>
+          <div key={label} className={`min-w-[142px] rounded-xl border bg-[var(--airport-sidebar)]/78 px-3 py-2 shadow-xl backdrop-blur-xl ${index === 3 ? "border-red-400/25" : "border-cyan-400/15"}`}>
             <p className="text-[10px] font-semibold uppercase tracking-[.12em] text-slate-500">{tr(label)}</p>
             <div className="mt-1 flex items-end justify-between gap-2"><strong className="text-base text-white">{value}</strong><span className={`text-[10px] ${index === 3 ? "text-red-300" : "text-cyan-200"}`}>{tr(trend)}</span></div>
           </div>
@@ -184,8 +187,8 @@ export function AirportOverview({ viewMode, onViewModeChange, onOpenModule, acti
       </div>
 
       <div className="absolute right-3 top-3 z-35 flex gap-2">
-        <span className="rounded-lg border border-white/10 bg-[#06111f]/76 px-3 py-2 text-[11px] text-slate-300 backdrop-blur-lg"><Wind size={13} className="mr-1 inline text-blue-300" />NE 4.6 m/s · {tr("Visibility 10 km")}</span>
-        <button onClick={() => toast.success(language === "vi" ? "Đã căn giữa bản đồ Khu Công nghệ cao" : "Spatial view centered on the high-tech park reference point")} className="airport-button bg-[#06111f]/76"><LocateFixed size={14} />{tr("Recenter")}</button>
+        <span className="rounded-lg border border-white/10 bg-[var(--airport-sidebar)]/76 px-3 py-2 text-[11px] text-slate-300 backdrop-blur-lg"><Wind size={13} className="mr-1 inline text-blue-300" />NE 4.6 m/s · {tr("Visibility 10 km")}</span>
+        <button onClick={() => toast.success(language === "vi" ? "Đã căn giữa bản đồ Khu Công nghệ cao" : "Spatial view centered on the high-tech park reference point")} className="airport-button bg-[var(--airport-sidebar)]/76"><LocateFixed size={14} />{tr("Recenter")}</button>
       </div>
 
       <AnimatePresence>
@@ -211,17 +214,17 @@ export function AirportOverview({ viewMode, onViewModeChange, onOpenModule, acti
             style={{ left: `${hotspot.x}%`, top: `${hotspot.y}%` }}
           >
             <span className="absolute inset-[-9px] rounded-full border opacity-50" style={{ borderColor: statusColor, animation: "airport-pulse-ring 2.4s ease-in-out infinite" }} />
-            <span className={`relative grid h-8 w-8 place-items-center rounded-full border-2 bg-[#06111f]/88 shadow-[0_0_18px_currentColor] transition-transform ${selectedHotspot ? "scale-125" : "hover:scale-110"}`} style={{ color: statusColor, borderColor: statusColor }}>
+            <span className={`relative grid h-8 w-8 place-items-center rounded-full border-2 bg-[var(--airport-sidebar)]/88 shadow-[0_0_18px_currentColor] transition-transform ${selectedHotspot ? "scale-125" : "hover:scale-110"}`} style={{ color: statusColor, borderColor: statusColor }}>
               {hotspot.type.includes("Digital Airspace") ? <Plane size={13} /> : hotspot.module === "SAFETY" ? <ShieldAlert size={13} /> : <Box size={13} />}
             </span>
-            <AnimatePresence>{hovered === hotspot.id && <motion.span initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }} className="pointer-events-none absolute bottom-11 left-1/2 w-48 -translate-x-1/2 rounded-lg border border-white/10 bg-[#06111f]/94 p-2 text-left shadow-xl backdrop-blur-xl"><span className="block text-[12px] font-semibold text-white">{tr(hotspot.label)}</span><span className="mt-1 flex justify-between text-[11px] text-slate-400"><span>{tr(hotspot.kpis[0].label)}</span><b className="text-cyan-200">{hotspot.kpis[0].value}</b></span></motion.span>}</AnimatePresence>
+            <AnimatePresence>{hovered === hotspot.id && <motion.span initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }} className="pointer-events-none absolute bottom-11 left-1/2 w-48 -translate-x-1/2 rounded-lg border border-white/10 bg-[var(--airport-sidebar)]/94 p-2 text-left shadow-xl backdrop-blur-xl"><span className="block text-[12px] font-semibold text-white">{tr(hotspot.label)}</span><span className="mt-1 flex justify-between text-[11px] text-slate-400"><span>{tr(hotspot.kpis[0].label)}</span><b className="text-cyan-200">{hotspot.kpis[0].value}</b></span></motion.span>}</AnimatePresence>
           </motion.button>
         );
       })}
 
       <AnimatePresence>
         {selected && (
-          <motion.aside initial={{ x: 350, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 350, opacity: 0 }} className="airport-scrollbar absolute bottom-20 right-3 top-14 z-50 w-80 overflow-y-auto rounded-xl border border-white/10 bg-[#06111f]/93 shadow-2xl backdrop-blur-2xl">
+          <motion.aside initial={{ x: 350, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 350, opacity: 0 }} className="airport-scrollbar absolute bottom-20 right-3 top-14 z-50 w-80 overflow-y-auto rounded-xl border border-white/10 bg-[var(--airport-sidebar)]/93 shadow-2xl backdrop-blur-2xl">
             <div className="flex items-start justify-between border-b border-white/[.08] p-4"><div><p className="text-[11px] uppercase tracking-[.16em] text-cyan-300">{tr("Spatial context")} · {tr(selected.type)}</p><h3 className="mt-1 text-sm font-semibold text-white">{tr(selected.label)}</h3></div><button onClick={() => setSelected(null)} className="airport-icon-button !h-7 !w-7"><X size={14} /></button></div>
             <div className="space-y-4 p-4">
               <div className="flex items-center justify-between"><AirportStatusBadge status={selected.status} /><span className="text-[11px] uppercase text-slate-500">{tr("Severity")} {tr(selected.severity)}</span></div>
@@ -239,7 +242,7 @@ export function AirportOverview({ viewMode, onViewModeChange, onOpenModule, acti
           <motion.aside
             initial={{ x: 460, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 460, opacity: 0 }}
             transition={{ type: "spring", damping: 30, stiffness: 270 }}
-            className="airport-scrollbar absolute bottom-20 right-3 top-14 z-[52] w-[420px] overflow-y-auto rounded-2xl border border-white/10 bg-[#06111f]/94 shadow-[-24px_0_80px_rgba(0,0,0,.42)] backdrop-blur-2xl"
+            className="airport-scrollbar absolute bottom-20 right-3 top-14 z-[52] w-[420px] overflow-y-auto rounded-2xl border border-white/10 bg-[var(--airport-sidebar)]/94 shadow-[-24px_0_80px_var(--airport-shadow-heavy)] backdrop-blur-2xl"
           >
             <InfoPanelHeader mode={infoMode} expanded={false} onExpand={() => setInfoExpanded(true)} onClose={() => setInfoMode("none")} />
             <div className="p-4">
@@ -262,7 +265,7 @@ export function AirportOverview({ viewMode, onViewModeChange, onOpenModule, acti
         {infoMode !== "none" && infoExpanded && (
           <>
             <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setInfoExpanded(false)} className="absolute inset-0 z-[88] bg-black/55 backdrop-blur-sm" aria-label={tr("Close expanded panel")} />
-            <motion.section initial={{ opacity: 0, scale: .96, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: .96, y: 20 }} className="airport-scrollbar absolute inset-x-[6vw] bottom-24 top-12 z-[89] overflow-y-auto rounded-2xl border border-white/10 bg-[#06111f]/98 shadow-2xl backdrop-blur-2xl">
+            <motion.section initial={{ opacity: 0, scale: .96, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: .96, y: 20 }} className="airport-scrollbar absolute inset-x-[6vw] bottom-24 top-12 z-[89] overflow-y-auto rounded-2xl border border-white/10 bg-[var(--airport-sidebar)]/98 shadow-2xl backdrop-blur-2xl">
               <InfoPanelHeader mode={infoMode} expanded onExpand={() => setInfoExpanded(false)} onClose={() => { setInfoExpanded(false); setInfoMode("none"); }} />
               <div className="p-5">
                 <OverviewInfoContent
@@ -281,7 +284,6 @@ export function AirportOverview({ viewMode, onViewModeChange, onOpenModule, acti
         )}
       </AnimatePresence>
 
-      <div className="pointer-events-none absolute bottom-4 left-4 z-20 rounded-lg border border-white/10 bg-[#06111f]/70 px-3 py-2 text-[10px] text-slate-500 backdrop-blur-lg">HIGH-TECH PARK DIGITAL TWIN · 2D / 3D IOC SPATIAL COMMAND VIEW</div>
     </div>
   );
 }
@@ -299,7 +301,7 @@ function InfoPanelHeader({ mode, expanded, onExpand, onClose }: {
         : mode === "maturity" ? "Digital Twin Maturity"
           : "Operational readiness";
   return (
-    <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/[.08] bg-[#06111f]/96 px-4 py-3 backdrop-blur-2xl">
+    <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/[.08] bg-[var(--airport-sidebar)]/96 px-4 py-3 backdrop-blur-2xl">
       <div><p className="text-[11px] uppercase tracking-[.18em] text-cyan-300">High-Tech Park Digital Twin</p><h2 className="mt-1 text-sm font-semibold text-white">{tr(title)}</h2></div>
       <div className="flex gap-1"><button onClick={onExpand} className="airport-icon-button !h-8 !w-8" title={tr(expanded ? "Restore compact panel" : "Expand panel")}>{expanded ? <Minimize2 size={15} /> : <Maximize2 size={15} />}</button><button onClick={onClose} className="airport-icon-button !h-8 !w-8"><X size={15} /></button></div>
     </div>

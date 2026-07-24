@@ -19,6 +19,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { createBmsGltfLoader } from "./bmsGltfLoader";
 import { Loader, AlertTriangle, RefreshCw, RotateCcw, Undo2 } from "lucide-react";
+import { useTheme } from "../../../theme/ThemeProvider";
 
 export interface BMSModelViewerProps {
   modelUrl: string;
@@ -37,6 +38,19 @@ const FOCUS_INTENSITY = 0.35;
 
 interface EmissiveSnapshot { color: THREE.Color; intensity: number; }
 
+// ── Theme-aware scene colours (JS values consumed by Three.js — CSS vars don't reach here) ──
+const SCENE_BG_DARK  = "linear-gradient(155deg,#0c1e38 0%,#041020 60%,#071828 100%)";
+const SCENE_BG_LIGHT = "linear-gradient(155deg,#dbe3ec 0%,#eef2f7 60%,#e4eaf1 100%)";
+const OVERLAY_BG_DARK  = { loading: "rgba(4,16,32,0.8)",  error: "rgba(4,16,32,0.85)" };
+const OVERLAY_BG_LIGHT = { loading: "rgba(232,237,243,0.85)", error: "rgba(232,237,243,0.9)" };
+const GRID_COLORS_DARK: [number, number] = [0x1e3a5f, 0x0d2035];
+const GRID_COLORS_LIGHT: [number, number] = [0xaebccb, 0x8fa3bb];
+const AMBIENT_INTENSITY = { dark: 1.3, light: 1.55 };
+const HEMI = {
+  dark:  { sky: 0xffffff, ground: 0x1b3650, intensity: 1.6 },
+  light: { sky: 0xffffff, ground: 0xd6dee6, intensity: 1.5 },
+};
+
 export const BMSModelViewer: React.FC<BMSModelViewerProps> = ({
   modelUrl,
   interactiveObjectNames = [],
@@ -44,6 +58,7 @@ export const BMSModelViewer: React.FC<BMSModelViewerProps> = ({
   accentColor = "#06b6d4",
   className = "",
 }) => {
+  const { theme } = useTheme();
   const mountRef  = useRef<HTMLDivElement>(null);
   const rendRef   = useRef<THREE.WebGLRenderer | null>(null);
   const sceneRef  = useRef<THREE.Scene | null>(null);
@@ -51,6 +66,9 @@ export const BMSModelViewer: React.FC<BMSModelViewerProps> = ({
   const ctrlRef   = useRef<OrbitControls | null>(null);
   const modelRef  = useRef<THREE.Object3D | null>(null);
   const mixerRef  = useRef<THREE.AnimationMixer | null>(null);
+  const ambientRef = useRef<THREE.AmbientLight | null>(null);
+  const hemiRef    = useRef<THREE.HemisphereLight | null>(null);
+  const gridRef    = useRef<THREE.GridHelper | null>(null);
   const timerRef  = useRef(new THREE.Timer());
   const rafRef    = useRef(0);
 
@@ -191,8 +209,13 @@ export const BMSModelViewer: React.FC<BMSModelViewerProps> = ({
     rendRef.current = rend;
 
     // Clean even lighting (per note)
-    scene.add(new THREE.AmbientLight(0xffffff, 1.3));
-    scene.add(new THREE.HemisphereLight(0xffffff, 0x1b3650, 1.6));
+    const ambient = new THREE.AmbientLight(0xffffff, AMBIENT_INTENSITY[theme]);
+    ambientRef.current = ambient;
+    scene.add(ambient);
+    const hemiCfg = HEMI[theme];
+    const hemi = new THREE.HemisphereLight(hemiCfg.sky, hemiCfg.ground, hemiCfg.intensity);
+    hemiRef.current = hemi;
+    scene.add(hemi);
     const key = new THREE.DirectionalLight(0xffffff, 2.0);
     key.position.set(6, 9, 6); scene.add(key);
     const fillL = new THREE.DirectionalLight(0xffffff, 1.1);
@@ -202,9 +225,11 @@ export const BMSModelViewer: React.FC<BMSModelViewerProps> = ({
     const rim = new THREE.DirectionalLight(0xffffff, 0.8);
     rim.position.set(-2, 5, -8); scene.add(rim);
 
-    const grid = new THREE.GridHelper(20, 30, 0x1e3a5f, 0x0d2035);
+    const [gridC1, gridC2] = theme === "light" ? GRID_COLORS_LIGHT : GRID_COLORS_DARK;
+    const grid = new THREE.GridHelper(20, 30, gridC1, gridC2);
     (grid.material as THREE.Material).opacity = 0.4;
     (grid.material as THREE.Material).transparent = true;
+    gridRef.current = grid;
     scene.add(grid);
 
     const ctrl = new OrbitControls(cam, rend.domElement);
@@ -254,6 +279,31 @@ export const BMSModelViewer: React.FC<BMSModelViewerProps> = ({
   // keep an up-to-date ref of isolatedName for the autorotate timeout closure
   const isolatedNameRef = useRef<string | null>(null);
   useEffect(() => { isolatedNameRef.current = isolatedName; }, [isolatedName]);
+
+  // ── Live theme switch — update lights + grid without rebuilding the scene ──
+  useEffect(() => {
+    const scene = sceneRef.current;
+    if (!scene) return;
+    if (ambientRef.current) ambientRef.current.intensity = AMBIENT_INTENSITY[theme];
+    if (hemiRef.current) {
+      const cfg = HEMI[theme];
+      hemiRef.current.color.setHex(cfg.sky);
+      hemiRef.current.groundColor.setHex(cfg.ground);
+      hemiRef.current.intensity = cfg.intensity;
+    }
+    if (gridRef.current) {
+      const [gridC1, gridC2] = theme === "light" ? GRID_COLORS_LIGHT : GRID_COLORS_DARK;
+      const oldOpacity = (gridRef.current.material as THREE.Material).opacity;
+      scene.remove(gridRef.current);
+      gridRef.current.geometry.dispose();
+      (gridRef.current.material as THREE.Material).dispose();
+      const grid = new THREE.GridHelper(20, 30, gridC1, gridC2);
+      (grid.material as THREE.Material).opacity = oldOpacity;
+      (grid.material as THREE.Material).transparent = true;
+      gridRef.current = grid;
+      scene.add(grid);
+    }
+  }, [theme]);
 
   // ── Load model ──────────────────────────────────────────────────────────────
   const loadModel = useCallback((url: string) => {
@@ -405,14 +455,19 @@ export const BMSModelViewer: React.FC<BMSModelViewerProps> = ({
   }, [interactiveObjectNames.join("|"), findInteractiveRoot, isolateObject]); // eslint-disable-line
 
   // ── Render ────────────────────────────────────────────────────────────────
+  const isLight = theme === "light";
+  const sceneBg = isLight ? SCENE_BG_LIGHT : SCENE_BG_DARK;
+  const overlayBg = isLight ? OVERLAY_BG_LIGHT : OVERLAY_BG_DARK;
+
   return (
     <div className={`relative w-full h-full overflow-hidden rounded-xl ${className}`}
-         style={{ background: "linear-gradient(155deg,#0c1e38 0%,#041020 60%,#071828 100%)" }}>
+         style={{ background: sceneBg }}>
       <div ref={mountRef} className="absolute inset-0" />
 
       {/* Loading */}
       {loadState === "loading" && (
-        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-[#041020]/80 backdrop-blur-sm">
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 backdrop-blur-sm"
+             style={{ background: overlayBg.loading }}>
           <Loader size={26} className="animate-spin" style={{ color: accentColor }} />
           <p className="text-[13px] font-mono" style={{ color: accentColor }}>Đang tải model 3D... {progress > 0 ? `${progress}%` : ""}</p>
         </div>
@@ -420,7 +475,8 @@ export const BMSModelViewer: React.FC<BMSModelViewerProps> = ({
 
       {/* Error */}
       {loadState === "error" && (
-        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-[#041020]/85 backdrop-blur-sm px-6 text-center">
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 backdrop-blur-sm px-6 text-center"
+             style={{ background: overlayBg.error }}>
           <AlertTriangle size={30} className="text-red-400" />
           <p className="text-sm font-semibold text-red-300">Không tải được model 3D</p>
           <p className="text-[12px] font-mono text-slate-500 break-all">{errorMsg || modelUrl}</p>

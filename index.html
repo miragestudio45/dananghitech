@@ -7,6 +7,16 @@
     <meta name="description" content="Nền tảng Digital Twin cho Khu Công nghệ cao Đà Nẵng: IOC, GIS/BIM, đất đai và đầu tư, hạ tầng công nghiệp, EBO/BMS, IoT, AI mô phỏng, an toàn và môi trường." />
     <meta name="robots" content="noindex, nofollow" />
     <meta name="theme-color" content="#04101e" />
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem("ui-theme");
+          document.documentElement.setAttribute("data-theme", stored === "light" ? "light" : "dark");
+        } catch (error) {
+          document.documentElement.setAttribute("data-theme", "dark");
+        }
+      })();
+    </script>
 
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/favicon.png" />
@@ -29,7 +39,7 @@
     <meta name="twitter:image" content="https://smartindustry.vercel.app/social-sharing-20260714.png" />
     <meta name="twitter:image:alt" content="Tổng quan nền tảng Digital Twin Khu Công nghệ cao Đà Nẵng" />
 
-    <style>html, body { height: 100%; margin: 0; background: #04101e; } #root { height: 100%; }</style>
+    <style>html, body { height: 100%; margin: 0; background: var(--airport-bg, #04101e); } #root { height: 100%; }</style>
   </head>
   <body>
     <div id="root"></div>

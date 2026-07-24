@@ -57,9 +57,9 @@ export function EboOperationalModal({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: .985, y: 8 }}
           transition={{ type: "spring", stiffness: 280, damping: 30 }}
-          className="fixed bottom-4 left-4 right-4 top-[80px] z-[151] flex min-h-0 flex-col overflow-hidden rounded-2xl border border-cyan-400/18 bg-[#06111f] shadow-[0_32px_110px_rgba(0,0,0,.72)]"
+          className="fixed bottom-4 left-4 right-4 top-[80px] z-[151] flex min-h-0 flex-col overflow-hidden rounded-2xl border border-cyan-400/18 bg-[var(--airport-sidebar)] shadow-[0_32px_110px_var(--airport-shadow-heavy)]"
         >
-          <header className="flex flex-none items-center gap-3 border-b border-white/[.08] bg-[#071426]/96 px-4 py-3">
+          <header className="flex flex-none items-center gap-3 border-b border-white/[.08] bg-[var(--airport-panel)]/96 px-4 py-3">
             <span className="grid h-9 w-9 flex-none place-items-center rounded-lg border border-cyan-400/18 bg-cyan-400/[.08] text-cyan-300"><ShieldCheck size={17}/></span>
             <div className="min-w-0 flex-1">
               <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-cyan-300">{eyebrow}</p>
@@ -72,7 +72,7 @@ export function EboOperationalModal({
 
           <div className="grid min-h-0 flex-1 grid-cols-1 xl:grid-cols-[minmax(0,1fr)_310px]">
             <main className="airport-scrollbar min-h-0 overflow-y-auto p-4">{children}</main>
-            <aside className="airport-scrollbar min-h-0 overflow-y-auto border-l border-white/[.08] bg-[#08172a]/72 p-4">
+            <aside className="airport-scrollbar min-h-0 overflow-y-auto border-l border-white/[.08] bg-[var(--airport-panel-alt)]/72 p-4">
               <p className="text-[11px] font-semibold uppercase tracking-[.16em] text-slate-500">Operational context</p>
               <div className="mt-3 space-y-2">
                 {fields.map((field) => <div key={field.label} className="rounded-lg border border-white/[.07] bg-white/[.03] px-3 py-2.5">
@@ -84,7 +84,7 @@ export function EboOperationalModal({
               </div>
             </aside>
           </div>
-          {footer && <footer className="flex flex-none items-center justify-end gap-2 border-t border-white/[.08] bg-[#071426]/96 px-4 py-3">{footer}</footer>}
+          {footer && <footer className="flex flex-none items-center justify-end gap-2 border-t border-white/[.08] bg-[var(--airport-panel)]/96 px-4 py-3">{footer}</footer>}
         </motion.section>
       </>}
     </AnimatePresence>

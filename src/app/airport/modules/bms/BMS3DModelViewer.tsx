@@ -20,6 +20,7 @@ import { createBmsGltfLoader } from "./bmsGltfLoader";
 import { resolveAnimationLabel, THUMBNAIL_CAM_PRESETS } from "./bmsEquipmentConfig";
 import { createTextureAnimationController, TextureAnimationController } from "./bmsTextureAnimator";
 import { Play, Pause, RotateCcw, RefreshCw, AlertTriangle, Loader, Waves } from "lucide-react";
+import { useTheme } from "../../../theme/ThemeProvider";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -47,6 +48,19 @@ const HOVER_INTENSITY  = 0.6;
 const SELECT_INTENSITY = 0.4;
 const AUTO_ROTATE_SPEED = 0.5;
 
+// ── Theme-aware scene colours (JS values consumed by Three.js — CSS vars don't reach here) ──
+const SCENE_BG_DARK  = "linear-gradient(155deg, #0c1e38 0%, #041020 55%, #071828 100%)";
+const SCENE_BG_LIGHT = "linear-gradient(155deg, #dbe3ec 0%, #eef2f7 55%, #e4eaf1 100%)";
+const OVERLAY_BG_DARK  = { loading: "rgba(4,16,32,0.8)",  error: "rgba(4,16,32,0.85)" };
+const OVERLAY_BG_LIGHT = { loading: "rgba(232,237,243,0.85)", error: "rgba(232,237,243,0.9)" };
+const GRID_COLORS_DARK: [number, number] = [0x1e3a5f, 0x0d2035];
+const GRID_COLORS_LIGHT: [number, number] = [0xaebccb, 0x8fa3bb];
+const AMBIENT_INTENSITY = { dark: 1.6, light: 1.85 };
+const HEMI = {
+  dark:  { sky: 0xffffff, ground: 0x8899aa, intensity: 1.4 },
+  light: { sky: 0xffffff, ground: 0xd6dee6, intensity: 1.55 },
+};
+
 function disposeModel(root: THREE.Object3D) {
   root.traverse((child) => {
     if (!(child as THREE.Mesh).isMesh) return;
@@ -73,11 +87,15 @@ export const BMS3DModelViewer: React.FC<BMS3DModelViewerProps> = ({
   defaultAnimation,
   onMeshClick,
 }) => {
+  const { theme } = useTheme();
   const mountRef  = useRef<HTMLDivElement>(null);
   const rendRef   = useRef<THREE.WebGLRenderer | null>(null);
   const sceneRef  = useRef<THREE.Scene | null>(null);
   const camRef    = useRef<THREE.PerspectiveCamera | null>(null);
   const ctrlRef   = useRef<OrbitControls | null>(null);
+  const ambientRef = useRef<THREE.AmbientLight | null>(null);
+  const hemiRef    = useRef<THREE.HemisphereLight | null>(null);
+  const gridRef    = useRef<THREE.GridHelper | null>(null);
   const mixerRef  = useRef<THREE.AnimationMixer | null>(null);
   const texCtrl   = useRef<TextureAnimationController | null>(null);
   const clockRef  = useRef(new THREE.Timer());
@@ -132,10 +150,15 @@ export const BMS3DModelViewer: React.FC<BMS3DModelViewerProps> = ({
     // Multiple directional lights around the model give flat, even coverage.
 
     // 1. Ambient — strong base fill so no face is dark
-    scene.add(new THREE.AmbientLight(0xffffff, 1.6));
+    const ambient = new THREE.AmbientLight(0xffffff, AMBIENT_INTENSITY[theme]);
+    ambientRef.current = ambient;
+    scene.add(ambient);
 
     // 2. Hemisphere — neutral top/bottom gradient (subtle, not blue)
-    scene.add(new THREE.HemisphereLight(0xffffff, 0x8899aa, 1.4));
+    const hemiCfg = HEMI[theme];
+    const hemi = new THREE.HemisphereLight(hemiCfg.sky, hemiCfg.ground, hemiCfg.intensity);
+    hemiRef.current = hemi;
+    scene.add(hemi);
 
     // 3. Key — main light, front-top-right (only one casts shadow)
     const key = new THREE.DirectionalLight(0xffffff, 1.9);
@@ -176,10 +199,12 @@ export const BMS3DModelViewer: React.FC<BMS3DModelViewerProps> = ({
     ground.receiveShadow = true;
     scene.add(ground);
 
-    const grid = new THREE.GridHelper(12, 28, 0x1e3a5f, 0x0d2035);
+    const [gridC1, gridC2] = theme === "light" ? GRID_COLORS_LIGHT : GRID_COLORS_DARK;
+    const grid = new THREE.GridHelper(12, 28, gridC1, gridC2);
     (grid.material as THREE.Material).opacity = 0.45;
     (grid.material as THREE.Material).transparent = true;
     grid.position.y = 0.002;
+    gridRef.current = grid;
     scene.add(grid);
 
     // ── OrbitControls ───────────────────────────────────────────────────────
@@ -462,6 +487,32 @@ export const BMS3DModelViewer: React.FC<BMS3DModelViewerProps> = ({
     };
   }, []); // eslint-disable-line
 
+  // ── Live theme switch — update lights + grid without rebuilding the scene ──
+  useEffect(() => {
+    const scene = sceneRef.current;
+    if (!scene) return;
+    if (ambientRef.current) ambientRef.current.intensity = AMBIENT_INTENSITY[theme];
+    if (hemiRef.current) {
+      const cfg = HEMI[theme];
+      hemiRef.current.color.setHex(cfg.sky);
+      hemiRef.current.groundColor.setHex(cfg.ground);
+      hemiRef.current.intensity = cfg.intensity;
+    }
+    if (gridRef.current) {
+      const [gridC1, gridC2] = theme === "light" ? GRID_COLORS_LIGHT : GRID_COLORS_DARK;
+      const oldOpacity = (gridRef.current.material as THREE.Material).opacity;
+      scene.remove(gridRef.current);
+      gridRef.current.geometry.dispose();
+      (gridRef.current.material as THREE.Material).dispose();
+      const grid = new THREE.GridHelper(12, 28, gridC1, gridC2);
+      (grid.material as THREE.Material).opacity = oldOpacity;
+      (grid.material as THREE.Material).transparent = true;
+      grid.position.y = 0.002;
+      gridRef.current = grid;
+      scene.add(grid);
+    }
+  }, [theme]);
+
   // ── Reload when URL changes ─────────────────────────────────────────────────
   useEffect(() => {
     if (!sceneRef.current) return;
@@ -501,23 +552,27 @@ export const BMS3DModelViewer: React.FC<BMS3DModelViewerProps> = ({
   };
 
   const hasAnyAnimation = clips.length > 0 || texAnimCount > 0;
+  const isLight = theme === "light";
+  const sceneBg = isLight ? SCENE_BG_LIGHT : SCENE_BG_DARK;
+  const overlayBg = isLight ? OVERLAY_BG_LIGHT : OVERLAY_BG_DARK;
 
   // ── Render ───────────────────────────────────────────────────────────────────
   return (
     <div className="relative w-full h-full flex flex-col overflow-hidden rounded-xl"
-         style={{ background: "linear-gradient(155deg, #0c1e38 0%, #041020 55%, #071828 100%)" }}>
+         style={{ background: sceneBg }}>
 
       {/* Canvas */}
       <div ref={mountRef} className="flex-1 w-full" style={{ minHeight: 0 }} />
 
       {/* Loading */}
       {loadState === "loading" && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center z-20 bg-[#041020]/80 backdrop-blur-sm gap-3">
+        <div className="absolute inset-0 flex flex-col items-center justify-center z-20 backdrop-blur-sm gap-3"
+             style={{ background: overlayBg.loading }}>
           <Loader size={26} className="animate-spin" style={{ color: accentColor }} />
           <p className="text-[13px] font-mono tracking-wide" style={{ color: accentColor }}>
             Loading {equipmentName}...
           </p>
-          <div className="w-44 h-1 bg-slate-800 rounded-full overflow-hidden">
+          <div className="w-44 h-1 bg-[var(--airport-border)] rounded-full overflow-hidden">
             <div className="h-full rounded-full transition-all duration-300"
                  style={{ width: `${progress}%`, background: `linear-gradient(90deg, ${accentColor}, #00e5ff)` }} />
           </div>
@@ -527,7 +582,8 @@ export const BMS3DModelViewer: React.FC<BMS3DModelViewerProps> = ({
 
       {/* Error */}
       {loadState === "error" && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center z-20 bg-[#041020]/85 backdrop-blur-sm gap-3 px-6 text-center">
+        <div className="absolute inset-0 flex flex-col items-center justify-center z-20 backdrop-blur-sm gap-3 px-6 text-center"
+             style={{ background: overlayBg.error }}>
           <AlertTriangle size={30} className="text-red-400" />
           <p className="text-red-300 text-sm font-semibold">Model không tải được</p>
           <p className="text-slate-500 text-[12px] font-mono">{errorMsg || modelUrl}</p>

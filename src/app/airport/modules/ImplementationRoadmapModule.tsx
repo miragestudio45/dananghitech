@@ -72,9 +72,9 @@ export function ImplementationRoadmapModule() {
       <AirportMetricCard label="OPEX planning" value="12–18%" trend="of CAPEX / year" tone="cyan" compact />
     </div>
 
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/[.07] bg-[#071426]/80 p-3">
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/[.07] bg-[var(--airport-panel)]/80 p-3">
       <div><p className="text-[11px] uppercase tracking-[.15em] text-cyan-300">Investment scenario</p><p className="mt-1 text-[12px] text-slate-500">Adjusts scope depth, resilience, device retrofit and integration intensity.</p></div>
-      <div className="flex rounded-xl border border-white/10 bg-white/[.025] p-1">{(["Lean","Target","Advanced"] as const).map((item) => <button key={item} onClick={() => setScenario(item)} className={`rounded-lg px-4 py-2 text-[11px] font-semibold ${scenario === item ? "bg-cyan-300 text-slate-950" : "text-slate-500 hover:text-white"}`}>{item}</button>)}</div>
+      <div className="flex rounded-xl border border-white/10 bg-white/[.025] p-1">{(["Lean","Target","Advanced"] as const).map((item) => <button key={item} onClick={() => setScenario(item)} className={`rounded-lg px-4 py-2 text-[11px] font-semibold ${scenario === item ? "bg-cyan-300 text-[var(--airport-accent-ink)]" : "text-slate-500 hover:text-white"}`}>{item}</button>)}</div>
     </div>
 
     <div className="grid gap-4 xl:grid-cols-4">

@@ -1,13 +1,103 @@
-.airport-platform {
+:root {
   --airport-bg: #04101e;
+  --airport-scene-bg:
+    radial-gradient(circle at 50% -20%, rgba(24, 113, 153, 0.16), transparent 42%),
+    linear-gradient(180deg, #061423 0%, #030b15 100%);
+  --airport-grid-opacity: 0;
+  --airport-surface: #04101e;
+  --airport-panel: #071426;
+  --airport-panel-alt: #09182b;
+  --airport-panel-strong: #0a192c;
+  --airport-sidebar: #06111f;
+  --airport-text: #dbeafe;
+  --airport-grid-line: rgba(56, 189, 248, 0.08);
+  --airport-border: rgba(255, 255, 255, 0.08);
+  --airport-control-bg: rgba(255, 255, 255, 0.035);
+  --airport-select-option-bg: #071426;
+  --airport-input-text: #f1f5f9;
+  --airport-map-ctrl-bg: rgba(6, 17, 31, 0.92);
+  --airport-map-ctrl-attrib-bg: rgba(6, 17, 31, 0.78);
+  --airport-map-ctrl-border: rgba(255, 255, 255, 0.12);
+  --airport-map-ctrl-text: #e2e8f0;
+  --airport-map-ctrl-filter: invert(1) brightness(1.35);
+  --airport-scrollbar-thumb: #164e63;
+  --airport-panel-shadow: 0 18px 50px rgba(0, 0, 0, .18);
+  --airport-shadow-soft: rgba(0, 0, 0, .24);
+  --airport-shadow-heavy: rgba(0, 0, 0, .5);
+  --airport-accent-ink: #03111e;
+  --airport-overview-vignette: rgba(1, 8, 18, .58);
+  --airport-overview-image-filter: none;
   --color-slate-300: #d7e1ec;
   --color-slate-400: #c0cedd;
   --color-slate-500: #a7b8cb;
   --color-slate-600: #8fa3bb;
-  background:
-    radial-gradient(circle at 50% -20%, rgba(24, 113, 153, .16), transparent 42%),
-    linear-gradient(180deg, #061423 0%, #030b15 100%);
-  color: #dbeafe;
+}
+
+:root[data-theme="light"] {
+  --airport-bg: #eef1fb;
+  --airport-scene-bg:
+    radial-gradient(circle at 10% -8%, rgba(99, 141, 255, .30), transparent 46%),
+    radial-gradient(circle at 95% 6%, rgba(129, 180, 255, .26), transparent 44%),
+    radial-gradient(circle at 22% 108%, rgba(167, 139, 250, .20), transparent 52%),
+    radial-gradient(circle at 100% 100%, rgba(103, 232, 249, .14), transparent 46%),
+    linear-gradient(180deg, #f4f6fd 0%, #e3e8f9 100%);
+  --airport-grid-opacity: 0;
+  --airport-surface: rgba(255, 255, 255, .72);
+  --airport-panel: #ffffff;
+  --airport-panel-alt: #f3f5fc;
+  --airport-panel-strong: #e8ecf8;
+  --airport-sidebar: #ffffff;
+  --airport-text: #16213a;
+  --airport-grid-line: transparent;
+  --airport-border: rgba(30, 41, 82, 0.12);
+  --airport-control-bg: #eef1fa;
+  --airport-select-option-bg: #ffffff;
+  --airport-input-text: #16213a;
+  --airport-map-ctrl-bg: rgba(255, 255, 255, 0.94);
+  --airport-map-ctrl-attrib-bg: rgba(255, 255, 255, 0.84);
+  --airport-map-ctrl-border: rgba(30, 41, 82, 0.14);
+  --airport-map-ctrl-text: #1a2438;
+  --airport-map-ctrl-filter: none;
+  --airport-scrollbar-thumb: #93bbe0;
+  --airport-panel-shadow: none;
+  --airport-shadow-soft: transparent;
+  --airport-shadow-heavy: transparent;
+  --airport-accent-ink: #ffffff;
+  --airport-overview-vignette: rgba(1, 8, 18, .58);
+  --airport-overview-image-filter: none;
+
+  --color-slate-200: #1c283f;
+  --color-slate-300: #2b3854;
+  --color-slate-400: #445374;
+  --color-slate-500: #59688a;
+  --color-slate-600: #74839f;
+
+  --color-white: #131c2e;
+  --color-cyan-50: #0369a1;
+  --color-cyan-100: #0369a1;
+  --color-cyan-200: #2563eb;
+  --color-cyan-300: #3b6ffb;
+  --color-blue-200: #2563eb;
+  --color-blue-300: #3b6ffb;
+  --color-emerald-100: #047857;
+  --color-emerald-200: #047857;
+  --color-emerald-300: #059669;
+  --color-amber-50: #a15b06;
+  --color-amber-100: #a15b06;
+  --color-amber-200: #a15b06;
+  --color-amber-300: #b45309;
+  --color-red-100: #b91c1c;
+  --color-red-200: #b91c1c;
+  --color-red-300: #dc2626;
+  --color-violet-100: #6d28d9;
+  --color-violet-200: #7c3aed;
+  --color-violet-300: #8b5cf6;
+}
+
+.airport-platform {
+  background: var(--airport-scene-bg);
+  background-attachment: fixed;
+  color: var(--airport-text);
 }
 
 .airport-platform::before {
@@ -15,68 +105,98 @@
   position: fixed;
   inset: 0;
   pointer-events: none;
-  opacity: .12;
+  opacity: var(--airport-grid-opacity);
   background-image:
-    linear-gradient(rgba(56, 189, 248, .08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(56, 189, 248, .08) 1px, transparent 1px);
+    linear-gradient(var(--airport-grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--airport-grid-line) 1px, transparent 1px);
   background-size: 42px 42px;
   mask-image: linear-gradient(to bottom, black, transparent 72%);
 }
 
-.airport-button,
-.airport-icon-button,
-.airport-select {
-  border: 1px solid rgba(255,255,255,.08);
-  background: rgba(255,255,255,.035);
-  color: #94a3b8;
-  transition: background .18s ease, border-color .18s ease, color .18s ease, transform .18s ease;
+/* Tailwind's built-in shadow-lg/xl/2xl bake a fixed rgba(0,0,0,x) with no themeable
+   variable. Light mode goes flat/borderless instead of a heavy elevation shadow. */
+:root[data-theme="light"] .airport-platform .shadow-lg,
+:root[data-theme="light"] .airport-platform .shadow-xl,
+:root[data-theme="light"] .airport-platform .shadow-2xl {
+  box-shadow: none;
 }
 
-.airport-button {
-  display: inline-flex;
-  align-items: center;
-  gap: .4rem;
-  border-radius: .5rem;
-  padding: .48rem .7rem;
-  min-height: 36px;
-  font-size: 12px;
-  line-height: 1.25;
-  font-weight: 600;
+.airport-overview-image { filter: var(--airport-overview-image-filter); }
+
+/* Keep every scrollable area inside the app on a slim, consistent scrollbar
+   instead of the browser's default (chunky) one. */
+.airport-platform * {
+  scrollbar-width: thin;
+  scrollbar-color: var(--airport-scrollbar-thumb) transparent;
+}
+.airport-platform *::-webkit-scrollbar { width: 6px; height: 6px; }
+.airport-platform *::-webkit-scrollbar-thumb { border-radius: 999px; background: var(--airport-scrollbar-thumb); }
+.airport-platform *::-webkit-scrollbar-track { background: transparent; }
+
+@layer components {
+  .airport-button,
+  .airport-icon-button,
+  .airport-select {
+    border: 1px solid var(--airport-border);
+    background: var(--airport-control-bg);
+    color: var(--color-slate-500);
+    transition: background .18s ease, border-color .18s ease, color .18s ease, transform .18s ease;
+  }
+
+  .airport-button {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    border-radius: .5rem;
+    padding: .48rem .7rem;
+    min-height: 36px;
+    font-size: 12px;
+    line-height: 1.25;
+    font-weight: 600;
+  }
+
+  .airport-icon-button {
+    display: inline-grid;
+    height: 34px;
+    width: 34px;
+    place-items: center;
+    border-radius: .55rem;
+  }
+
+  .airport-button:hover,
+  .airport-icon-button:hover,
+  .airport-select:hover {
+    border-color: rgba(2,132,199,.35);
+    background: rgba(2,132,199,.1);
+    color: var(--color-cyan-300);
+  }
+
+  :root:not([data-theme="light"]) .airport-button:hover,
+  :root:not([data-theme="light"]) .airport-icon-button:hover,
+  :root:not([data-theme="light"]) .airport-select:hover {
+    border-color: rgba(34,211,238,.28);
+    background: rgba(34,211,238,.08);
+    color: #cffafe;
+  }
+
+  .airport-button:disabled,
+  .airport-icon-button:disabled { opacity: .35; cursor: not-allowed; }
+
+  .airport-select {
+    min-height: 36px;
+    border-radius: .5rem;
+    padding: .47rem .65rem;
+    font-size: 12px;
+    line-height: 1.25;
+    outline: none;
+  }
+
+  .airport-select option { background: var(--airport-select-option-bg); color: var(--color-slate-300); }
 }
 
-.airport-icon-button {
-  display: inline-grid;
-  height: 34px;
-  width: 34px;
-  place-items: center;
-  border-radius: .55rem;
-}
-
-.airport-button:hover,
-.airport-icon-button:hover,
-.airport-select:hover {
-  border-color: rgba(34,211,238,.28);
-  background: rgba(34,211,238,.08);
-  color: #cffafe;
-}
-
-.airport-button:disabled,
-.airport-icon-button:disabled { opacity: .35; cursor: not-allowed; }
-
-.airport-select {
-  min-height: 36px;
-  border-radius: .5rem;
-  padding: .47rem .65rem;
-  font-size: 12px;
-  line-height: 1.25;
-  outline: none;
-}
-
-.airport-select option { background: #071426; color: #cbd5e1; }
-
-.airport-scrollbar { scrollbar-width: thin; scrollbar-color: #164e63 transparent; }
+.airport-scrollbar { scrollbar-width: thin; scrollbar-color: var(--airport-scrollbar-thumb) transparent; }
 .airport-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
-.airport-scrollbar::-webkit-scrollbar-thumb { border-radius: 999px; background: #164e63; }
+.airport-scrollbar::-webkit-scrollbar-thumb { border-radius: 999px; background: var(--airport-scrollbar-thumb); }
 .airport-scrollbar::-webkit-scrollbar-track { background: transparent; }
 
 .spatial-layer-scrollbar { scrollbar-width: thin; scrollbar-color: rgba(34,211,238,.42) transparent; }
@@ -98,7 +218,7 @@
   position: relative;
   width: 17px;
   height: 17px;
-  border: 3px solid #06111f;
+  border: 3px solid var(--airport-sidebar);
   border-radius: 999px;
   background: var(--marker-color, #67e8f9);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--marker-color, #67e8f9) 44%, transparent), 0 0 22px var(--marker-color, #67e8f9);
@@ -116,10 +236,10 @@
 .spatial-map-marker.is-active { transform: scale(1.25); box-shadow: 0 0 0 3px rgba(255,255,255,.34), 0 0 28px var(--marker-color, #67e8f9); }
 
 .maplibregl-ctrl-group,
-.maplibregl-popup-content { border: 1px solid rgba(255,255,255,.12) !important; background: rgba(6,17,31,.92) !important; color: #e2e8f0 !important; box-shadow: 0 12px 32px rgba(0,0,0,.38) !important; }
-.maplibregl-ctrl-group button { filter: invert(1) brightness(1.35); }
-.maplibregl-ctrl-attrib { background: rgba(6,17,31,.78) !important; color: #a7b8cb !important; font-size: 10px !important; line-height: 1.3 !important; }
-.maplibregl-ctrl-attrib a { color: #a5f3fc !important; }
+.maplibregl-popup-content { border: 1px solid var(--airport-map-ctrl-border) !important; background: var(--airport-map-ctrl-bg) !important; color: var(--airport-map-ctrl-text) !important; box-shadow: 0 12px 32px var(--airport-shadow-soft) !important; }
+.maplibregl-ctrl-group button { filter: var(--airport-map-ctrl-filter); }
+.maplibregl-ctrl-attrib { background: var(--airport-map-ctrl-attrib-bg) !important; color: var(--color-slate-500) !important; font-size: 10px !important; line-height: 1.3 !important; }
+.maplibregl-ctrl-attrib a { color: var(--color-cyan-300, #a5f3fc) !important; }
 
 @keyframes airport-grid-drift { from { transform: translateY(0); } to { transform: translateY(42px); } }
 @keyframes airport-pulse-ring { 0%,100% { transform: scale(.9); opacity: .3; } 50% { transform: scale(1.35); opacity: .05; } }
@@ -136,7 +256,7 @@
   line-height: 1.35 !important;
   letter-spacing: .07em !important;
   font-weight: 700 !important;
-  color: #c0cedd !important;
+  color: var(--color-slate-400) !important;
 }
 
 .airport-platform table thead th {
@@ -152,12 +272,12 @@
 .airport-platform input,
 .airport-platform textarea,
 .airport-platform select {
-  color: #f1f5f9;
+  color: var(--airport-input-text);
 }
 
 .airport-platform input::placeholder,
 .airport-platform textarea::placeholder {
-  color: #8fa3bb;
+  color: var(--color-slate-600);
 }
 
 .airport-platform .recharts-cartesian-axis-tick-value,

@@ -34,12 +34,12 @@ export function AirportStatusBadge({ status, label }: { status: AirportStatus | 
 export function AirportMetricCard({ label, value, trend, tone = "cyan", compact = false }: { label: string; value: string | number; trend?: string; tone?: "cyan" | "blue" | "emerald" | "amber" | "red" | "violet"; compact?: boolean }) {
   const { tr } = useAirportLanguage();
   const tones = {
-    cyan: "from-cyan-400/16 border-cyan-400/20 text-cyan-200",
-    blue: "from-blue-400/16 border-blue-400/20 text-blue-200",
-    emerald: "from-emerald-400/16 border-emerald-400/20 text-emerald-200",
-    amber: "from-amber-400/16 border-amber-400/20 text-amber-200",
-    red: "from-red-400/16 border-red-400/20 text-red-200",
-    violet: "from-violet-400/16 border-violet-400/20 text-violet-200",
+    cyan: "from-cyan-400/22 border-cyan-400/32 text-cyan-200",
+    blue: "from-blue-400/22 border-blue-400/32 text-blue-200",
+    emerald: "from-emerald-400/22 border-emerald-400/32 text-emerald-200",
+    amber: "from-amber-400/22 border-amber-400/32 text-amber-200",
+    red: "from-red-400/22 border-red-400/32 text-red-200",
+    violet: "from-violet-400/22 border-violet-400/32 text-violet-200",
   };
   return (
     <motion.div whileHover={{ y: -2 }} className={`relative overflow-hidden rounded-xl border bg-gradient-to-br ${tones[tone]} to-transparent ${compact ? "p-3" : "p-4"}`}>
@@ -70,7 +70,7 @@ export function AirportSectionHeader({ title, description, eyebrow, actions }: {
 export function AirportPanel({ title, subtitle, action, children, className = "" }: { title?: string; subtitle?: string; action?: React.ReactNode; children: React.ReactNode; className?: string }) {
   const { tr } = useAirportLanguage();
   return (
-    <section className={`min-w-0 rounded-xl border border-white/[0.08] bg-[#071426]/88 shadow-[0_18px_50px_rgba(0,0,0,.18)] backdrop-blur-xl ${className}`}>
+    <section className={`min-w-0 rounded-xl border border-white/[0.08] bg-[var(--airport-panel)]/88 shadow-[var(--airport-panel-shadow)] backdrop-blur-xl ${className}`}>
       {(title || action) && (
         <div className="flex items-center justify-between gap-3 border-b border-white/[0.07] px-4 py-3">
           <div><h3 className="text-xs font-semibold text-slate-100">{title ? tr(title) : title}</h3>{subtitle && <p className="mt-0.5 text-[12px] text-slate-500">{tr(subtitle)}</p>}</div>
@@ -86,7 +86,7 @@ export function AirportFilterBar({ search, onSearch, timeRange, onTimeRange, chi
   const { tr } = useAirportLanguage();
   const ranges = ["Live", "24 Hours", "7 Days", "30 Days", "90 Days", "1 Year", "3 Years", "5 Years"];
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded-xl border border-white/[0.07] bg-slate-950/45 p-2">
+    <div className="flex flex-wrap items-center gap-2 rounded-xl border border-white/[0.07] bg-[var(--airport-panel-alt)]/70 p-2">
       {onSearch && <label className="flex min-w-52 flex-1 items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.035] px-3 py-2"><Search size={14} className="text-slate-500" /><input value={search} onChange={(event) => onSearch(event.target.value)} placeholder={tr("Search park data…")} className="w-full bg-transparent text-xs text-white outline-none placeholder:text-slate-600" /></label>}
       {onTimeRange && <select value={timeRange} onChange={(event) => onTimeRange(event.target.value)} className="airport-select">{ranges.map((range) => <option key={range} value={range}>{tr(range)}</option>)}</select>}
       {children}
@@ -122,18 +122,18 @@ export function AirportDataTable<T extends { id?: string }>({
     const link = document.createElement("a"); link.href = url; link.download = "da-nang-high-tech-park-export.csv"; link.click(); URL.revokeObjectURL(url);
   };
   return (
-    <div className="overflow-hidden rounded-xl border border-white/[0.08] bg-[#071426]/90 shadow-[0_18px_45px_rgba(0,0,0,.22)]">
+    <div className="overflow-hidden rounded-xl border border-white/[0.08] bg-[var(--airport-panel)]/90 shadow-[0_18px_45px_var(--airport-shadow-soft)]">
       <div className="flex items-center justify-between border-b border-white/[0.07] px-3 py-2">
         <span className="text-[11px] text-slate-500">{total.toLocaleString()} {tr("records · deterministic demo data")}</span>
         <div className="relative flex gap-2">
           <button onClick={() => setShowColumns(!showColumns)} className="airport-button"><Columns3 size={13} /> {tr("Columns")}</button>
           <button onClick={exportCsv} className="airport-button"><Download size={13} /> CSV</button>
-          {showColumns && <div className="absolute right-20 top-10 z-50 w-52 rounded-xl border border-white/10 bg-[#09182b] p-2 shadow-2xl">{columns.map((column) => <label key={column.key} className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs text-slate-300 hover:bg-white/5"><input type="checkbox" checked={visible.has(column.key)} onChange={() => setVisible((current) => { const next = new Set(current); next.has(column.key) ? next.delete(column.key) : next.add(column.key); return next; })} className="accent-cyan-400" />{column.label}</label>)}</div>}
+          {showColumns && <div className="absolute right-20 top-10 z-50 w-52 rounded-xl border border-white/10 bg-[var(--airport-panel-alt)] p-2 shadow-2xl">{columns.map((column) => <label key={column.key} className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs text-slate-300 hover:bg-white/5"><input type="checkbox" checked={visible.has(column.key)} onChange={() => setVisible((current) => { const next = new Set(current); next.has(column.key) ? next.delete(column.key) : next.add(column.key); return next; })} className="accent-cyan-400" />{column.label}</label>)}</div>}
         </div>
       </div>
       <div className="overflow-auto">
         <table className="w-full min-w-[980px] text-left text-[12px]">
-          <thead className="sticky top-0 z-10 bg-[#0a192c] text-[10px] uppercase tracking-[0.11em] text-slate-500"><tr>{visibleColumns.map((column) => <th key={column.key} style={{ minWidth: column.width }} className={`px-2.5 py-1.5 align-bottom ${column.headerClassName ?? ""}`}><button className="flex items-center gap-1 whitespace-nowrap leading-tight hover:text-cyan-300" onClick={() => { if (sortKey === column.key) setAscending(!ascending); else { setSortKey(column.key); setAscending(true); } }}>{tr(column.label)}<ArrowDownUp size={10} /></button></th>)}</tr></thead>
+          <thead className="sticky top-0 z-10 bg-[var(--airport-panel-strong)] text-[10px] uppercase tracking-[0.11em] text-slate-500"><tr>{visibleColumns.map((column) => <th key={column.key} style={{ minWidth: column.width }} className={`px-2.5 py-1.5 align-bottom ${column.headerClassName ?? ""}`}><button className="flex items-center gap-1 whitespace-nowrap leading-tight hover:text-cyan-300" onClick={() => { if (sortKey === column.key) setAscending(!ascending); else { setSortKey(column.key); setAscending(true); } }}>{tr(column.label)}<ArrowDownUp size={10} /></button></th>)}</tr></thead>
           <tbody>{sortedRows.map((row, index) => <tr key={row.id ?? index} onClick={() => onRowClick?.(row)} className={`border-t border-white/[0.045] text-slate-300 transition-colors ${onRowClick ? "cursor-pointer hover:bg-cyan-400/[0.055]" : ""} ${row.id === selectedId ? "bg-cyan-400/[0.08]" : ""}`}>{visibleColumns.map((column) => <td key={column.key} className={`max-w-56 truncate px-2.5 py-2 text-[12px] ${column.cellClassName ?? ""}`}>{column.render ? column.render(row) : String(row[column.key] ?? "—")}</td>)}</tr>)}</tbody>
         </table>
       </div>
@@ -148,7 +148,7 @@ export function AirportPagination({ page, totalPages, pageSize, onPageChange, on
 }
 
 export function AirportTrendChart({ data, color = "#22d3ee", height = 210, unit = "" }: { data: Array<{ time: string; value: number; forecast?: number }>; color?: string; height?: number; unit?: string }) {
-  return <div style={{ height }} className="w-full"><ResponsiveContainer width="100%" height="100%"><AreaChart data={data}><defs><linearGradient id={`airport-gradient-${color.replace("#", "")}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={color} stopOpacity={0.38} /><stop offset="100%" stopColor={color} stopOpacity={0.02} /></linearGradient></defs><CartesianGrid stroke="rgba(148,163,184,.09)" vertical={false} /><XAxis dataKey="time" tick={{ fill: "#94a3b8", fontSize: 11 }} axisLine={false} tickLine={false} minTickGap={28} /><YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} axisLine={false} tickLine={false} width={38} /><Tooltip contentStyle={{ background: "#071426", border: "1px solid rgba(255,255,255,.1)", borderRadius: 10, fontSize: 13 }} formatter={(value) => [`${value}${unit}`, "Actual"]} /><Area type="monotone" dataKey="value" stroke={color} strokeWidth={2} fill={`url(#airport-gradient-${color.replace("#", "")})`} /><Area type="monotone" dataKey="forecast" stroke="#a78bfa" strokeWidth={1.2} strokeDasharray="4 4" fill="transparent" /></AreaChart></ResponsiveContainer></div>;
+  return <div style={{ height }} className="w-full"><ResponsiveContainer width="100%" height="100%"><AreaChart data={data}><defs><linearGradient id={`airport-gradient-${color.replace("#", "")}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={color} stopOpacity={0.38} /><stop offset="100%" stopColor={color} stopOpacity={0.02} /></linearGradient></defs><CartesianGrid stroke="rgba(148,163,184,.09)" vertical={false} /><XAxis dataKey="time" tick={{ fill: "#94a3b8", fontSize: 11 }} axisLine={false} tickLine={false} minTickGap={28} /><YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} axisLine={false} tickLine={false} width={38} /><Tooltip contentStyle={{ background: "var(--airport-panel)", border: "1px solid rgba(255,255,255,.1)", borderRadius: 10, fontSize: 13 }} formatter={(value) => [`${value}${unit}`, "Actual"]} /><Area type="monotone" dataKey="value" stroke={color} strokeWidth={2} fill={`url(#airport-gradient-${color.replace("#", "")})`} /><Area type="monotone" dataKey="forecast" stroke="#a78bfa" strokeWidth={1.2} strokeDasharray="4 4" fill="transparent" /></AreaChart></ResponsiveContainer></div>;
 }
 
 export function AirportTimeline({ events }: { events: ReadonlyArray<ReadonlyArray<string>> }) {
@@ -198,7 +198,7 @@ export function AirportModuleSidebar({ module, activeSection, onSectionChange, o
         initial={false}
         animate={{ width: open ? 288 : 0, opacity: open ? 1 : 0 }}
         transition={{ type: "spring", damping: 30, stiffness: 280 }}
-        className="relative z-[65] h-full flex-none overflow-hidden border-r border-white/[0.08] bg-[#06111f]/96 shadow-[20px_0_55px_rgba(0,0,0,.28)] backdrop-blur-2xl"
+        className="relative z-[65] h-full flex-none overflow-hidden border-r border-white/[0.08] bg-[var(--airport-sidebar)]/96 shadow-[20px_0_55px_var(--airport-shadow-soft)] backdrop-blur-2xl"
         aria-hidden={!open}
       >
         {content}
@@ -214,7 +214,7 @@ export function AirportModuleSidebar({ module, activeSection, onSectionChange, o
           animate={{ x: 0, opacity: 1 }}
           exit={{ x: -310, opacity: 0 }}
           transition={{ type: "spring", damping: 28, stiffness: 260 }}
-          className="airport-scrollbar fixed bottom-0 left-0 top-[72px] z-[76] w-72 overflow-y-auto border-r border-white/[0.08] bg-[#06111f]/96 px-3 pb-28 pt-4 shadow-[24px_0_80px_rgba(0,0,0,.42)] backdrop-blur-2xl"
+          className="airport-scrollbar fixed bottom-0 left-0 top-[72px] z-[76] w-72 overflow-y-auto border-r border-white/[0.08] bg-[var(--airport-sidebar)]/96 px-3 pb-28 pt-4 shadow-[24px_0_80px_var(--airport-shadow-heavy)] backdrop-blur-2xl"
         >
           {content}
         </motion.aside>
@@ -238,7 +238,7 @@ export function AirportBottomNavigation({ activeModule, onModuleChange, onLaunch
   return (
     <div
       ref={navRef}
-      className="airport-scrollbar-hidden fixed bottom-4 left-1/2 z-[80] flex w-[calc(100vw-24px)] max-w-[calc(100vw-24px)] -translate-x-1/2 flex-nowrap items-center gap-1 overflow-x-auto overflow-y-hidden rounded-2xl border border-white/10 bg-[#06111f]/88 p-1.5 shadow-[0_20px_70px_rgba(0,0,0,.5)] backdrop-blur-2xl xl:w-max xl:overflow-x-hidden"
+      className="airport-scrollbar-hidden fixed bottom-6 left-1/2 z-[80] flex w-[calc(100vw-24px)] max-w-[calc(100vw-24px)] -translate-x-1/2 flex-nowrap items-center gap-1 overflow-x-auto overflow-y-hidden rounded-2xl border border-white/10 bg-[var(--airport-sidebar)]/88 p-1.5 shadow-[0_20px_70px_var(--airport-shadow-heavy)] backdrop-blur-2xl xl:w-max xl:overflow-x-hidden"
       onWheel={(event) => {
         const element = navRef.current;
         if (!element || element.scrollWidth <= element.clientWidth) return;
@@ -278,7 +278,7 @@ export function AirportBottomNavigation({ activeModule, onModuleChange, onLaunch
         const module = localizeModule(sourceModule);
         const Icon = module.icon;
         const active = activeModule === module.id;
-        return <button key={module.id} onClick={() => onModuleChange(module.id)} className={`relative flex h-11 min-w-11 flex-none items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-[12px] font-semibold leading-none transition-colors 2xl:min-w-0 2xl:flex-auto ${active ? "text-[#03111e]" : "text-slate-400 hover:bg-white/5 hover:text-white"}`}>{active && <motion.span layoutId="airport-active-module" className="absolute inset-0 rounded-xl bg-cyan-300" transition={{ type: "spring", bounce: 0.18, duration: 0.55 }} />}<Icon size={15} className="relative flex-none" /><span className={`relative whitespace-nowrap ${active ? "inline" : "hidden 2xl:inline"}`}>{module.shortLabel}</span></button>;
+        return <button key={module.id} onClick={() => onModuleChange(module.id)} className={`relative flex h-11 min-w-11 flex-none items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-[12px] font-semibold leading-none transition-colors 2xl:min-w-0 2xl:flex-auto ${active ? "text-[var(--airport-accent-ink)]" : "text-slate-400 hover:bg-white/5 hover:text-white"}`}>{active && <motion.span layoutId="airport-active-module" className="absolute inset-0 rounded-xl bg-cyan-300" transition={{ type: "spring", bounce: 0.18, duration: 0.55 }} />}<Icon size={15} className="relative flex-none" /><span className={`relative whitespace-nowrap ${active ? "inline" : "hidden 2xl:inline"}`}>{module.shortLabel}</span></button>;
       })}
       <div className="mx-1 h-7 w-px flex-none bg-white/10" />
       <button onClick={onLauncher} className="flex h-11 min-w-11 flex-none items-center justify-center gap-2 whitespace-nowrap rounded-xl px-3 py-2 text-[12px] font-semibold leading-none text-slate-300 hover:bg-white/5 hover:text-white 2xl:min-w-0 2xl:flex-auto"><Grid3X3 size={15} className="flex-none" /><span className="hidden whitespace-nowrap 2xl:inline">{tr("All Modules")}</span></button>
@@ -288,7 +288,7 @@ export function AirportBottomNavigation({ activeModule, onModuleChange, onLaunch
 
 export function AirportAppLauncher({ open, onClose, onSelect }: { open: boolean; onClose: () => void; onSelect: (moduleId: AirportModuleId, sectionId: string) => void }) {
   const { tr, localizeModule } = useAirportLanguage();
-  return <AnimatePresence>{open && <><motion.button aria-label="Close launcher" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm" /><motion.div initial={{ opacity: 0, scale: .96, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: .96, y: 20 }} className="airport-scrollbar fixed inset-x-[8vw] bottom-24 top-24 z-[101] overflow-auto rounded-2xl border border-white/10 bg-[#071426]/98 p-6 shadow-2xl"><div className="flex items-center justify-between"><div><p className="text-[12px] uppercase tracking-[.2em] text-cyan-300">{tr("High-tech park application launcher")}</p><h2 className="mt-1 text-xl font-semibold text-white">{tr("All operational modules")}</h2></div><button onClick={onClose} className="airport-icon-button"><X size={18} /></button></div><div className="mt-6 grid grid-cols-2 gap-4 xl:grid-cols-3">{AIRPORT_MODULES.map((sourceModule) => { const module = localizeModule(sourceModule); const Icon = module.icon; return <section key={module.id} className="rounded-xl border border-white/[.07] bg-white/[.025] p-4"><div className="mb-3 flex items-center gap-3"><span className="rounded-lg bg-cyan-400/10 p-2 text-cyan-300"><Icon size={17} /></span><div><h3 className="text-sm font-semibold text-white">{module.label}</h3><p className="text-[11px] text-slate-500">{module.sections.length} {tr("operational views")}</p></div></div><div className="grid grid-cols-2 gap-1">{module.sections.map((section) => <button key={section.id} onClick={() => { onSelect(module.id, section.id); onClose(); }} className="rounded-lg px-2 py-2 text-left text-[12px] text-slate-400 hover:bg-cyan-400/[.08] hover:text-cyan-200">{section.label}</button>)}</div></section>; })}</div></motion.div></>}</AnimatePresence>;
+  return <AnimatePresence>{open && <><motion.button aria-label="Close launcher" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm" /><motion.div initial={{ opacity: 0, scale: .96, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: .96, y: 20 }} className="airport-scrollbar fixed inset-x-[8vw] bottom-24 top-24 z-[101] overflow-auto rounded-2xl border border-white/10 bg-[var(--airport-panel)]/98 p-6 shadow-2xl"><div className="flex items-center justify-between"><div><p className="text-[12px] uppercase tracking-[.2em] text-cyan-300">{tr("High-tech park application launcher")}</p><h2 className="mt-1 text-xl font-semibold text-white">{tr("All operational modules")}</h2></div><button onClick={onClose} className="airport-icon-button"><X size={18} /></button></div><div className="mt-6 grid grid-cols-2 gap-4 xl:grid-cols-3">{AIRPORT_MODULES.map((sourceModule) => { const module = localizeModule(sourceModule); const Icon = module.icon; return <section key={module.id} className="rounded-xl border border-white/[.07] bg-white/[.025] p-4"><div className="mb-3 flex items-center gap-3"><span className="rounded-lg bg-cyan-400/10 p-2 text-cyan-300"><Icon size={17} /></span><div><h3 className="text-sm font-semibold text-white">{module.label}</h3><p className="text-[11px] text-slate-500">{module.sections.length} {tr("operational views")}</p></div></div><div className="grid grid-cols-2 gap-1">{module.sections.map((section) => <button key={section.id} onClick={() => { onSelect(module.id, section.id); onClose(); }} className="rounded-lg px-2 py-2 text-left text-[12px] text-slate-400 hover:bg-cyan-400/[.08] hover:text-cyan-200">{section.label}</button>)}</div></section>; })}</div></motion.div></>}</AnimatePresence>;
 }
 
 export function AirportDetailDrawer({ open, title, subtitle, onClose, children }: { open: boolean; title: string; subtitle?: string; onClose: () => void; children: React.ReactNode }) {
@@ -316,9 +316,9 @@ export function AirportDetailDrawer({ open, title, subtitle, onClose, children }
       animate={{ x: 0 }}
       exit={{ x: 520 }}
       transition={{ type: "spring", damping: 28, stiffness: 240 }}
-      className="airport-scrollbar fixed bottom-0 right-0 top-[72px] z-[95] w-[480px] max-w-[94vw] overflow-y-auto border-l border-white/10 bg-[#071426]/98 shadow-[-30px_0_80px_rgba(0,0,0,.45)] backdrop-blur-2xl"
+      className="airport-scrollbar fixed bottom-0 right-0 top-[72px] z-[95] w-[480px] max-w-[94vw] overflow-y-auto border-l border-white/10 bg-[var(--airport-panel)]/98 shadow-[-30px_0_80px_var(--airport-shadow-heavy)] backdrop-blur-2xl"
     >
-      <div className="sticky top-0 z-20 flex items-start justify-between border-b border-white/[.08] bg-[#071426]/96 px-5 py-4 backdrop-blur-2xl">
+      <div className="sticky top-0 z-20 flex items-start justify-between border-b border-white/[.08] bg-[var(--airport-panel)]/96 px-5 py-4 backdrop-blur-2xl">
         <div><p className="text-[11px] uppercase tracking-[.18em] text-cyan-300">Context detail</p><h2 className="mt-1 text-lg font-semibold text-white">{tr(title)}</h2>{subtitle && <p className="mt-1 text-xs text-slate-500">{tr(subtitle)}</p>}</div>
         <button onClick={onClose} aria-label={tr("Close")} title={tr("Close")} className="airport-icon-button shrink-0 border-cyan-400/20 bg-cyan-400/[.06] text-cyan-200"><X size={18} /></button>
       </div>

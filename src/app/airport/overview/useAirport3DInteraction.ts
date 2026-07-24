@@ -6,7 +6,7 @@ import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
-import { AIRPORT_3D_CONFIG } from "./airport3DConfig";
+import { AIRPORT_3D_CONFIG, AIRPORT_3D_SCENE_THEMES, type Airport3DSceneTheme, type Airport3DThemeName } from "./airport3DConfig";
 
 export type Airport3DControlMode = "orbit" | "walk";
 export type Airport3DSceneMode = "overview" | "factory";
@@ -67,12 +67,19 @@ function createRadialTexture(stops: Array<[number, string]>, size = 128) {
   return texture;
 }
 
-function createNightSkyMaterial() {
+function createNightSkyMaterial(sky: Airport3DSceneTheme["sky"]) {
   return new THREE.ShaderMaterial({
     side: THREE.BackSide,
     depthWrite: false,
     depthTest: false,
     fog: false,
+    uniforms: {
+      uZenith: { value: new THREE.Vector3(...sky.zenith) },
+      uUpper: { value: new THREE.Vector3(...sky.upper) },
+      uHorizon: { value: new THREE.Vector3(...sky.horizon) },
+      uAirglow: { value: new THREE.Vector3(...sky.airglow) },
+      uGlow: { value: new THREE.Vector3(...sky.glow) },
+    },
     vertexShader: `
       varying vec3 vDirection;
       void main() {
@@ -82,21 +89,31 @@ function createNightSkyMaterial() {
     `,
     fragmentShader: `
       varying vec3 vDirection;
+      uniform vec3 uZenith;
+      uniform vec3 uUpper;
+      uniform vec3 uHorizon;
+      uniform vec3 uAirglow;
+      uniform vec3 uGlow;
       void main() {
         float heightFactor = max(vDirection.y, 0.0);
-        vec3 zenith = vec3(0.004, 0.010, 0.030);
-        vec3 upper = vec3(0.008, 0.030, 0.075);
-        vec3 horizon = vec3(0.020, 0.060, 0.115);
-        vec3 color = mix(horizon, upper, smoothstep(0.0, 0.46, heightFactor));
-        color = mix(color, zenith, smoothstep(0.38, 1.0, heightFactor));
+        vec3 color = mix(uHorizon, uUpper, smoothstep(0.0, 0.46, heightFactor));
+        color = mix(color, uZenith, smoothstep(0.38, 1.0, heightFactor));
         float airglow = exp(-abs(vDirection.y - 0.065) * 28.0);
-        color += vec3(0.010, 0.036, 0.048) * airglow;
+        color += uAirglow * airglow;
         float softBlueGlow = exp(-length(vDirection.xz - vec2(-0.25, 0.25)) * 2.7);
-        color += vec3(0.005, 0.018, 0.045) * softBlueGlow;
+        color += uGlow * softBlueGlow;
         gl_FragColor = vec4(color, 1.0);
       }
     `,
   });
+}
+
+function applySkyThemeUniforms(material: THREE.ShaderMaterial, sky: Airport3DSceneTheme["sky"]) {
+  (material.uniforms.uZenith.value as THREE.Vector3).set(...sky.zenith);
+  (material.uniforms.uUpper.value as THREE.Vector3).set(...sky.upper);
+  (material.uniforms.uHorizon.value as THREE.Vector3).set(...sky.horizon);
+  (material.uniforms.uAirglow.value as THREE.Vector3).set(...sky.airglow);
+  (material.uniforms.uGlow.value as THREE.Vector3).set(...sky.glow);
 }
 
 function createStarMaterial(texture: THREE.Texture, opacity: number) {
@@ -327,6 +344,7 @@ export function useAirport3DInteraction(
   options: {
     sceneMode: Airport3DSceneMode;
     onEnterFactory: () => void;
+    theme?: Airport3DThemeName;
   },
 ) {
   const [loading, setLoading] = useState(false);
@@ -351,6 +369,7 @@ export function useAirport3DInteraction(
   const controlModeRef = useRef<Airport3DControlMode>("orbit");
   const setControlModeRef = useRef<(mode: Airport3DControlMode) => void>(() => undefined);
   const applyViewSettingsRef = useRef<(next: Airport3DViewSettings, previous: Airport3DViewSettings) => void>(() => undefined);
+  const applySceneThemeRef = useRef<(theme: Airport3DThemeName) => void>(() => undefined);
   const optionsRef = useRef(options);
   optionsRef.current = options;
 
@@ -380,9 +399,11 @@ export function useAirport3DInteraction(
     setReady(false);
     setTransitioning(false);
     setSelectedTarget(null);
+    const initialTheme: Airport3DThemeName = optionsRef.current.theme ?? "dark";
+    const initialSceneTheme = AIRPORT_3D_SCENE_THEMES[initialTheme];
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(AIRPORT_3D_CONFIG.background);
-    scene.fog = new THREE.FogExp2(0x020a14, isFactoryScene ? 0.00038 : 0.0012);
+    scene.background = new THREE.Color(initialSceneTheme.background);
+    scene.fog = new THREE.FogExp2(new THREE.Color(initialSceneTheme.fog.color).getHex(), isFactoryScene ? 0.00038 : 0.0012);
 
     const camera = new THREE.PerspectiveCamera(
       AIRPORT_3D_CONFIG.defaultCamera.fov,
@@ -470,9 +491,10 @@ export function useAirport3DInteraction(
       [0.32, "rgba(255,255,255,.24)"],
       [1, "rgba(255,255,255,0)"],
     ]);
+    const skyMaterial = createNightSkyMaterial(initialSceneTheme.sky);
     const skyDome = new THREE.Mesh(
       new THREE.SphereGeometry(1800, 56, 36),
-      createNightSkyMaterial(),
+      skyMaterial,
     );
     skyDome.renderOrder = -1000;
     scene.add(skyDome);
@@ -481,12 +503,16 @@ export function useAirport3DInteraction(
     const milkyWay = createMilkyWay(starTexture, glowTexture);
     fieldStars.renderOrder = -990;
     milkyWay.group.renderOrder = -985;
+    fieldStars.visible = initialSceneTheme.sky.showStars;
+    milkyWay.group.visible = initialSceneTheme.sky.showStars;
     scene.add(fieldStars, milkyWay.group);
 
-    scene.add(new THREE.AmbientLight(0xb7ddff, 0.95));
-    scene.add(new THREE.HemisphereLight(0xd4f4ff, 0x05101b, 2.2));
+    const ambientLight = new THREE.AmbientLight(0xb7ddff, initialSceneTheme.lighting.ambientIntensity);
+    scene.add(ambientLight);
+    const hemisphereLight = new THREE.HemisphereLight(0xd4f4ff, 0x05101b, initialSceneTheme.lighting.hemisphereIntensity);
+    scene.add(hemisphereLight);
 
-    const key = new THREE.DirectionalLight(0xe7faff, AIRPORT_3D_CONFIG.lighting.keyIntensity);
+    const key = new THREE.DirectionalLight(0xe7faff, initialSceneTheme.lighting.keyIntensity);
     key.position.set(45, 72, 35);
     key.castShadow = true;
     key.shadow.mapSize.set(2048, 2048);
@@ -500,17 +526,38 @@ export function useAirport3DInteraction(
     key.shadow.normalBias = 0.05;
     scene.add(key);
 
-    const fill = new THREE.DirectionalLight(0x69d8ff, AIRPORT_3D_CONFIG.lighting.fillIntensity);
+    const fill = new THREE.DirectionalLight(0x69d8ff, initialSceneTheme.lighting.fillIntensity);
     fill.position.set(-56, 34, 20);
     scene.add(fill);
 
-    const rim = new THREE.DirectionalLight(0x6172ff, AIRPORT_3D_CONFIG.lighting.rimIntensity);
+    const rim = new THREE.DirectionalLight(0x6172ff, initialSceneTheme.lighting.rimIntensity);
     rim.position.set(10, 42, -72);
     scene.add(rim);
 
-    const warm = new THREE.DirectionalLight(0xffcf8f, 0.84);
+    const warm = new THREE.DirectionalLight(0xffcf8f, initialSceneTheme.lighting.warmIntensity);
     warm.position.set(-16, 24, -22);
     scene.add(warm);
+
+    // Lightweight theme switcher: recolors the existing scene (background, fog,
+    // sky dome, stars, lights) without rebuilding the model/scene graph, so
+    // toggling light/dark mode at runtime stays instant and cheap.
+    const applySceneTheme = (theme: Airport3DThemeName) => {
+      const palette = AIRPORT_3D_SCENE_THEMES[theme];
+      scene.background = new THREE.Color(palette.background);
+      if (scene.fog instanceof THREE.FogExp2) {
+        scene.fog.color.set(palette.fog.color);
+      }
+      applySkyThemeUniforms(skyMaterial, palette.sky);
+      fieldStars.visible = palette.sky.showStars;
+      milkyWay.group.visible = palette.sky.showStars;
+      ambientLight.intensity = palette.lighting.ambientIntensity;
+      hemisphereLight.intensity = palette.lighting.hemisphereIntensity;
+      key.intensity = palette.lighting.keyIntensity;
+      fill.intensity = palette.lighting.fillIntensity;
+      rim.intensity = palette.lighting.rimIntensity;
+      warm.intensity = palette.lighting.warmIntensity;
+    };
+    applySceneThemeRef.current = applySceneTheme;
 
     const gridTexture = createGridTexture();
     gridTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
@@ -896,7 +943,7 @@ export function useAirport3DInteraction(
           if (isGroundSurface) walkableGroundMeshes.push(object);
           materials.forEach((material) => {
             if (material instanceof THREE.MeshStandardMaterial || material instanceof THREE.MeshPhysicalMaterial) {
-              material.envMapIntensity = AIRPORT_3D_CONFIG.lighting.environmentIntensity;
+              material.envMapIntensity = initialSceneTheme.lighting.environmentIntensity;
               material.needsUpdate = true;
               const maps = [material.map, material.normalMap, material.roughnessMap, material.metalnessMap];
               maps.forEach((texture) => {
@@ -1352,6 +1399,7 @@ export function useAirport3DInteraction(
 
     return () => {
       disposed = true;
+      applySceneThemeRef.current = () => undefined;
       cancelAnimationFrame(raf);
       resizeObserver?.disconnect();
       renderer.domElement.removeEventListener("pointermove", onMove);
@@ -1387,6 +1435,12 @@ export function useAirport3DInteraction(
       if (renderer.domElement.parentElement === container) container.removeChild(renderer.domElement);
     };
   }, [containerRef, options.sceneMode]);
+
+  // Applying the theme is intentionally kept out of the setup effect above so
+  // toggling light/dark mode never triggers a full scene/model rebuild.
+  useEffect(() => {
+    applySceneThemeRef.current(options.theme ?? "dark");
+  }, [options.theme]);
 
   return {
     loading,

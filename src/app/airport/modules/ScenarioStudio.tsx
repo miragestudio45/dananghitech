@@ -82,19 +82,18 @@ export function ScenarioStudio({ type }: { type: ScenarioType }) {
 
       <div className="space-y-4">
         <AirportPanel title="Spatial impact model" subtitle="Dynamic scenario layer · affected plots, networks and response zones">
-          <div className="relative min-h-[430px] overflow-hidden rounded-b-xl bg-[#04111f]">
-            <div className="absolute inset-0 opacity-25" style={{ backgroundImage: "linear-gradient(rgba(34,211,238,.12) 1px,transparent 1px),linear-gradient(90deg,rgba(34,211,238,.12) 1px,transparent 1px)", backgroundSize: "38px 38px" }} />
+          <div className="relative min-h-[430px] overflow-hidden rounded-b-xl bg-[var(--airport-panel)]">
             <svg className="absolute inset-0 h-full w-full opacity-75" viewBox="0 0 1000 430" preserveAspectRatio="none">
               <path d="M20 345 C180 275, 340 360, 480 245 S760 175, 980 105" fill="none" stroke="rgba(96,165,250,.55)" strokeWidth="12" />
               <path d="M80 85 L925 370" fill="none" stroke="rgba(52,211,153,.26)" strokeWidth="4" strokeDasharray="14 10" />
             </svg>
 
             {config.zones.map((zone, index) => <motion.div key={zone.label} initial={{ opacity: 0, scale: .7 }} animate={{ opacity: completed ? 1 : .25, scale: completed ? 1 : .82 }} transition={{ delay: index * .08 }} style={{ left: `${zone.x}%`, top: `${zone.y}%`, width: `${zone.size}%`, height: `${zone.size * .72}%` }} className={`absolute -translate-x-1/2 -translate-y-1/2 rounded-full border-2 ${zone.tone === "red" ? "border-red-300/65 bg-red-400/12 shadow-[0_0_32px_rgba(248,113,113,.2)]" : zone.tone === "amber" ? "border-amber-300/65 bg-amber-400/12 shadow-[0_0_30px_rgba(251,191,36,.18)]" : "border-cyan-300/60 bg-cyan-400/10 shadow-[0_0_28px_rgba(34,211,238,.16)]"}`}>
-              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded border border-white/10 bg-[#06111f]/88 px-2 py-1 text-[10px] font-semibold text-white">{zone.label}</span>
+              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded border border-white/10 bg-[var(--airport-sidebar)]/88 px-2 py-1 text-[10px] font-semibold text-white">{zone.label}</span>
             </motion.div>)}
 
-            <div className="absolute left-4 top-4 rounded-xl border border-white/10 bg-[#06111f]/88 p-3 backdrop-blur-xl"><p className="text-[10px] uppercase tracking-[.14em] text-cyan-300">Simulation state</p><div className="mt-2 flex items-center gap-2">{running ? <Sparkles size={15} className="animate-pulse text-violet-300"/> : <CheckCircle2 size={15} className="text-emerald-300"/>}<p className="text-[12px] font-semibold text-white">{running ? "Calculating spatial impacts" : "Scenario results available"}</p></div></div>
-            <div className="absolute bottom-4 left-4 right-4 rounded-xl border border-white/10 bg-[#06111f]/90 p-4 backdrop-blur-xl"><div className="grid grid-cols-4 gap-3">{config.resultCards.map(([label, value, detail, status]) => <div key={label} className="rounded-lg bg-white/[.03] p-3"><div className="flex items-center justify-between"><p className="text-[10px] text-slate-500">{label}</p><AirportStatusBadge status={status}/></div><p className="mt-2 text-lg font-semibold text-white">{value}</p><p className="mt-1 text-[10px] text-slate-600">{detail}</p></div>)}</div></div>
+            <div className="absolute left-4 top-4 rounded-xl border border-white/10 bg-[var(--airport-sidebar)]/88 p-3 backdrop-blur-xl"><p className="text-[10px] uppercase tracking-[.14em] text-cyan-300">Simulation state</p><div className="mt-2 flex items-center gap-2">{running ? <Sparkles size={15} className="animate-pulse text-violet-300"/> : <CheckCircle2 size={15} className="text-emerald-300"/>}<p className="text-[12px] font-semibold text-white">{running ? "Calculating spatial impacts" : "Scenario results available"}</p></div></div>
+            <div className="absolute bottom-4 left-4 right-4 rounded-xl border border-white/10 bg-[var(--airport-sidebar)]/90 p-4 backdrop-blur-xl"><div className="grid grid-cols-4 gap-3">{config.resultCards.map(([label, value, detail, status]) => <div key={label} className="rounded-lg bg-white/[.03] p-3"><div className="flex items-center justify-between"><p className="text-[10px] text-slate-500">{label}</p><AirportStatusBadge status={status}/></div><p className="mt-2 text-lg font-semibold text-white">{value}</p><p className="mt-1 text-[10px] text-slate-600">{detail}</p></div>)}</div></div>
           </div>
         </AirportPanel>
 
